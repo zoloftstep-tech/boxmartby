@@ -68,7 +68,7 @@ export function Header() {
               className="focus-ring hidden cursor-pointer items-center gap-2 text-sm font-medium text-ink md:inline-flex"
             >
               <IconPhone className="h-4 w-4 text-cta" />
-              +375 (17) 000-00-00
+              +375 (29) 616-81-69
             </a>
             <a
               href="#calculator"
@@ -113,7 +113,7 @@ export function Header() {
               className="focus-ring mt-1 cursor-pointer rounded-md px-3 py-2.5 text-sm font-medium text-cta"
               onClick={() => setOpen(false)}
             >
-              +375 (17) 000-00-00
+              +375 (29) 616-81-69
             </a>
           </nav>
         </div>
