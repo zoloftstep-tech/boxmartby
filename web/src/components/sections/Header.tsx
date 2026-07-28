@@ -31,8 +31,8 @@ export function Header() {
       }`}
     >
       <div className="section-pad">
-        <div className="container-site flex h-16 items-center justify-between gap-4 md:h-[4.5rem]">
-          <a href="#top" className="focus-ring group flex min-w-0 cursor-pointer items-center gap-2.5 sm:gap-3">
+        <div className="container-site flex h-16 items-center justify-between gap-3 md:h-[4.5rem] md:gap-4">
+          <a href="#top" className="focus-ring group flex shrink-0 cursor-pointer items-center gap-2.5 sm:gap-3">
             <Image
               src="/logo-mark.png"
               alt=""
@@ -45,41 +45,45 @@ export function Header() {
               <span className="font-display block text-lg font-semibold tracking-tight text-ink md:text-xl">
                 БОКСМАРТ
               </span>
-              <span className="mt-0.5 block truncate text-[11px] text-muted sm:text-xs">
+              <span className="mt-0.5 hidden text-xs text-muted sm:block xl:hidden">
                 Производство картонной упаковки в Минске
               </span>
             </span>
           </a>
 
-          <nav className="hidden items-center gap-6 lg:flex" aria-label="Основная навигация">
+          <nav
+            className="hidden min-w-0 flex-1 items-center justify-center gap-x-3.5 xl:flex 2xl:gap-x-5"
+            aria-label="Основная навигация"
+          >
             {NAV.map((item) => (
               <a
                 key={item.href}
                 href={item.href}
-                className="focus-ring cursor-pointer text-sm font-medium text-ink-soft transition-colors duration-200 hover:text-ink"
+                className="focus-ring shrink-0 cursor-pointer whitespace-nowrap text-sm font-medium text-ink-soft transition-colors duration-200 hover:text-ink"
               >
                 {item.label}
               </a>
             ))}
           </nav>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <a
               href="tel:+375296168169"
-              className="focus-ring hidden cursor-pointer items-center gap-2 text-sm font-medium text-ink md:inline-flex"
+              className="focus-ring hidden cursor-pointer items-center gap-1.5 whitespace-nowrap text-sm font-medium text-ink xl:inline-flex"
             >
-              <IconPhone className="h-4 w-4 text-cta" />
-              +375(29)616-81-69
+              <IconPhone className="h-4 w-4 shrink-0 text-cta" />
+              +375 (29) 616-81-69
             </a>
             <a
               href="#calculator"
-              className="focus-ring inline-flex cursor-pointer items-center rounded-md bg-cta px-3.5 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-cta-hover"
+              className="focus-ring inline-flex cursor-pointer items-center rounded-md bg-cta px-3 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-cta-hover sm:px-3.5"
             >
-              Рассчитать стоимость
+              <span className="sm:hidden">Рассчитать</span>
+              <span className="hidden sm:inline">Рассчитать стоимость</span>
             </a>
             <button
               type="button"
-              className="focus-ring inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-line lg:hidden"
+              className="focus-ring inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-line xl:hidden"
               aria-expanded={open}
               aria-controls="mobile-nav"
               aria-label={open ? "Закрыть меню" : "Открыть меню"}
@@ -97,7 +101,7 @@ export function Header() {
       </div>
 
       {open && (
-        <div id="mobile-nav" className="border-t border-line bg-surface-elevated lg:hidden">
+        <div id="mobile-nav" className="border-t border-line bg-surface-elevated xl:hidden">
           <nav className="section-pad flex flex-col gap-1 py-3" aria-label="Мобильная навигация">
             {NAV.map((item) => (
               <a
