@@ -1,0 +1,132 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #0f172a;
+  --color-ink-soft: #334155;
+  --color-muted: #64748b;
+  --color-surface: #f8fafc;
+  --color-surface-elevated: #ffffff;
+  --color-line: #e2e8f0;
+  --color-kraft: #9a7348;
+  --color-kraft-dark: #6b4f2e;
+  --color-kraft-soft: #e8dcc8;
+  --color-cta: #0369a1;
+  --color-cta-hover: #075985;
+  --color-accent: #0c4a6e;
+
+  --font-display: var(--font-boxmart-display), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-boxmart-sans), ui-sans-serif, system-ui, sans-serif;
+
+  --animate-fade-up: fade-up 0.7s ease-out both;
+  --animate-draw: draw-line 1.2s ease-out both;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes draw-line {
+  from {
+    stroke-dashoffset: 240;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes float-soft {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.kraft-texture {
+  background-color: #f3eee6;
+  background-image:
+    radial-gradient(ellipse at 20% 30%, rgba(154, 115, 72, 0.12), transparent 50%),
+    radial-gradient(ellipse at 80% 70%, rgba(107, 79, 46, 0.08), transparent 45%),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 11px,
+      rgba(154, 115, 72, 0.04) 11px,
+      rgba(154, 115, 72, 0.04) 12px
+    );
+}
+
+.corrugated-band {
+  background-image: repeating-linear-gradient(
+    90deg,
+    #c4a574 0px,
+    #c4a574 3px,
+    #a67c52 3px,
+    #a67c52 6px,
+    #8b6914 6px,
+    #8b6914 7px,
+    #d4bc8e 7px,
+    #d4bc8e 10px
+  );
+}
+
+.section-pad {
+  padding-inline: 1rem;
+}
+
+@media (min-width: 640px) {
+  .section-pad {
+    padding-inline: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .section-pad {
+    padding-inline: 2rem;
+  }
+}
+
+.container-site {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid var(--color-cta);
+  outline-offset: 2px;
+}

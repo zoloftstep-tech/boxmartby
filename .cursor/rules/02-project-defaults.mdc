@@ -1,0 +1,40 @@
+---
+description: Default working style for practical product and internal tooling work
+globs: ["**/*"]
+alwaysApply: true
+---
+
+Default to pragmatic solutions suitable for internal tools, production utilities, automation, calculators, dashboards, admin panels, and operational software.
+
+Optimize for:
+- Fast implementation.
+- Low maintenance burden.
+- Predictable behavior.
+- Easy onboarding for the next developer.
+- Minimal moving parts.
+- Clear business value.
+
+Prefer:
+- Small functions.
+- Flat structure over deep architecture.
+- Explicit SQL over unnecessary ORM magic when queries are simple.
+- Simple APIs over generic frameworks.
+- Direct data flow over indirection.
+- Readable HTML/CSS/JS over clever patterns.
+- Incremental refactors over broad rewrites.
+
+Avoid by default:
+- Premature microservices.
+- CQRS/event buses without real complexity.
+- Repository/service/factory layers for trivial CRUD.
+- Overly generic utility libraries.
+- Custom state management where local state is enough.
+- New UI component systems for one screen.
+- Plugin systems for single-tenant/internal use cases.
+- Excessive TypeScript gymnastics when plain types are enough.
+
+When uncertain:
+- Choose the option that is easier to debug at 2 AM.
+- Choose the option with fewer files.
+- Choose the option with fewer dependencies.
+- Choose the option that a competent engineer can understand in one reading.

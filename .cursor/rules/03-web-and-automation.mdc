@@ -1,0 +1,39 @@
+---
+description: Rules for web apps, automation, and utility scripts
+globs: ["**/*.{js,ts,jsx,tsx,html,css,sql,py,sh,json,yml,yaml}"]
+alwaysApply: true
+---
+
+For web development:
+- Prefer semantic HTML and native browser controls first.
+- Prefer simple forms over custom widgets.
+- Prefer server-rendered or straightforward client-side flows over unnecessary complexity.
+- Use native input types when possible: date, email, number, range, color, file, checkbox, radio.
+- Do not build a component abstraction after only one use.
+- Keep CSS simple; avoid design-system overbuild for small tools.
+- For tables, filters, CRUD, dashboards, and calculators, prioritize usability over architectural purity.
+
+For automation:
+- Prefer shell, SQL, or short Python/Node scripts when they solve the task cleanly.
+- Prefer cron/job/scheduler simplicity over workflow sprawl unless orchestration is truly needed.
+- Prefer idempotent scripts.
+- Log enough to diagnose failures, but do not overbuild observability.
+- Avoid multi-step orchestration frameworks for one linear process.
+- Prefer a single script with clear inputs/outputs over a framework.
+
+For APIs and integrations:
+- Reuse existing auth/session/token handling.
+- Do not wrap fetch/axios/http clients unless multiple call sites need shared logic.
+- Keep payload schemas explicit.
+- Validate external input and fail loudly on malformed data.
+- Add retries only where the external dependency is actually flaky or rate-limited.
+
+For data work:
+- Prefer direct CSV/JSON/SQL processing over adding a database.
+- Prefer one transformation pipeline over many tiny transformation layers.
+- Preserve source data shape unless there is a clear need to normalize it.
+
+Before adding a package, ask:
+- Does the platform already do this?
+- Is the package already installed?
+- Will this still be worth it in six months?
