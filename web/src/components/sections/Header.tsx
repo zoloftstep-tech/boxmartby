@@ -64,7 +64,7 @@ export function Header() {
 
           <div className="flex items-center gap-2 sm:gap-3">
             <a
-              href="tel:+375170000000"
+              href="tel:+375296168169"
               className="focus-ring hidden cursor-pointer items-center gap-2 text-sm font-medium text-ink md:inline-flex"
             >
               <IconPhone className="h-4 w-4 text-cta" />
@@ -109,7 +109,7 @@ export function Header() {
               </a>
             ))}
             <a
-              href="tel:+375170000000"
+              href="tel:+375296168169"
               className="focus-ring mt-1 cursor-pointer rounded-md px-3 py-2.5 text-sm font-medium text-cta"
               onClick={() => setOpen(false)}
             >
