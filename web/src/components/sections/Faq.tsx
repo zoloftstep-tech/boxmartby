@@ -1,9 +1,11 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { IconChevron } from "../icons";
 
-const FAQ_ITEMS = [
+type FaqItem = { id?: string; q: string; a: string };
+
+const FAQ_ITEMS: FaqItem[] = [
   {
     q: "Какой минимальный тираж?",
     a: "Работаем и с небольшими партиями для старта продаж, и с оптовыми объёмами. Точный минимум зависит от конструкции и необходимости штанц-формы. Онлайн-калькулятор считает стоимость коробок; если нужна новая штанц-форма — её цена согласуется отдельно.",
@@ -20,11 +22,32 @@ const FAQ_ITEMS = [
     q: "Как оплатить и получить заказ?",
     a: "Безналичный расчёт для юрлиц и ИП по договору. Для физических лиц возможна оплата через ЕРИП. Самовывоз с производства в Минске или доставка по согласованию. Реквизиты и шаблон договора — в подвале сайта.",
   },
+  {
+    id: "faq-delivery",
+    q: "Доставка",
+    a: "Доставка курьерскими службами или самовывоз. Собственный транспорт — в планах.",
+  },
 ];
+
+function deliveryIndex() {
+  return FAQ_ITEMS.findIndex((item) => item.id === "faq-delivery");
+}
 
 export function Faq() {
   const [open, setOpen] = useState<number | null>(0);
   const baseId = useId();
+
+  useEffect(() => {
+    const syncFromHash = () => {
+      if (window.location.hash === "#faq-delivery") {
+        const idx = deliveryIndex();
+        if (idx >= 0) setOpen(idx);
+      }
+    };
+    syncFromHash();
+    window.addEventListener("hashchange", syncFromHash);
+    return () => window.removeEventListener("hashchange", syncFromHash);
+  }, []);
 
   return (
     <section id="faq" className="section-pad border-t border-line bg-surface-elevated py-20 md:py-28">
@@ -35,7 +58,7 @@ export function Faq() {
             Частые вопросы
           </h2>
           <p className="mt-4 text-base leading-relaxed text-ink-soft">
-            Коротко о тиражах, печати, оснастке и оплате. Остальное — в заявке из калькулятора.
+            Коротко о тиражах, печати, оснастке, оплате и доставке. Остальное — в заявке из калькулятора.
           </p>
         </div>
 
@@ -45,7 +68,7 @@ export function Faq() {
             const panelId = `${baseId}-panel-${index}`;
             const buttonId = `${baseId}-button-${index}`;
             return (
-              <div key={item.q}>
+              <div key={item.q} id={item.id}>
                 <h3>
                   <button
                     id={buttonId}

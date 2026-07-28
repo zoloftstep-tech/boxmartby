@@ -1,4 +1,4 @@
-import { IconCalc, IconFactory, IconRuler, IconStack } from "../icons";
+import { IconCalc, IconFactory, IconRuler, IconStack, IconUser } from "../icons";
 import { CorrugatedCrossSection } from "../visuals/IsometricBox";
 
 const FEATURES = [
@@ -22,6 +22,11 @@ const FEATURES = [
     title: "Прозрачное ценообразование",
     text: "Мгновенный расчёт онлайн: видите объём и стоимость до звонка менеджеру.",
   },
+  {
+    icon: IconUser,
+    title: "Работаем с физ лицами",
+    text: "Для физических лиц возможна оплата через ЕРИП.",
+  },
 ];
 
 export function About() {
@@ -36,7 +41,6 @@ export function About() {
           <p className="mt-4 text-base leading-relaxed text-ink-soft sm:text-lg">
             ООО «БОКСМАРТ» — производство гофротарной упаковки в Минске. Работаем с малым
             бизнесом и селлерами маркетплейсов: точные размеры, понятные сроки, цена без лишних звеньев.
-            Для физических лиц возможна оплата через ЕРИП.
           </p>
         </div>
 
@@ -44,7 +48,7 @@ export function About() {
           <CorrugatedCrossSection className="h-14 w-full sm:h-16" />
         </div>
 
-        <ul className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-10">
+        <ul className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 lg:gap-10">
           {FEATURES.map(({ icon: Icon, title, text }) => (
             <li key={title} className="border-t border-line pt-6">
               <Icon className="h-6 w-6 text-cta" />

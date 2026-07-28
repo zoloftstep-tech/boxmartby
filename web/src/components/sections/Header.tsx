@@ -10,6 +10,7 @@ const NAV = [
   { href: "#sellers", label: "Селлерам" },
   { href: "#calculator", label: "Калькулятор" },
   { href: "#faq", label: "FAQ" },
+  { href: "#faq-delivery", label: "Доставка" },
 ];
 
 export function Header() {
