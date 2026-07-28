@@ -69,7 +69,7 @@ export function Header() {
               className="focus-ring hidden cursor-pointer items-center gap-2 text-sm font-medium text-ink md:inline-flex"
             >
               <IconPhone className="h-4 w-4 text-cta" />
-              +375 (29) 616-81-69
+              +375(29)616-81-69
             </a>
             <a
               href="#calculator"
