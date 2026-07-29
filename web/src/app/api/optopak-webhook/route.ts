@@ -12,7 +12,6 @@ import {
   findOptopakOrderLinkForReply,
   saveOptopakOrderLink,
   updateLinkedCard,
-  encodeOptopakLinkRef,
   type OrderCardLink,
   type ParsedOrderData,
 } from "@/lib/orderLinking";
@@ -91,16 +90,6 @@ async function telegramSendMessage(params: {
 
   const body = (await response.json()) as any;
   return body?.result?.message_id as number;
-}
-
-function escapeHtml(text: string): string {
-  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
-function buildConfirmWithHiddenLink(humanLines: string[], link: OrderCardLink): string {
-  const human = humanLines.map(escapeHtml).join("\n");
-  const ref = escapeHtml(encodeOptopakLinkRef(link));
-  return `${human}\n<tg-spoiler>${ref}</tg-spoiler>`;
 }
 
 async function telegramEditMessageText(params: {
@@ -309,7 +298,7 @@ export async function POST(request: NextRequest) {
           botToken,
           chatId: optopakChatId,
           text:
-            "Не удалось найти связанную карточку. Для уточнения сделайте reply на сообщение бота «Заявка BM-… отправлена…» (не на исходный текст заказа).",
+            "Не удалось найти связанную карточку. Сделайте reply на сообщение бота «Заявка BM-… отправлена…» вскоре после создания заявки.",
           replyToMessageId: msg.message_id,
         }).catch(() => undefined);
         return NextResponse.json({ ok: true });
@@ -384,12 +373,8 @@ export async function POST(request: NextRequest) {
       const confirmId = await telegramSendMessage({
         botToken,
         chatId: optopakChatId,
-        text: buildConfirmWithHiddenLink(
-          [`Карточка ${link.orderId} обновлена.`, "Чтобы уточнить ещё — reply на это сообщение."],
-          updatedLink,
-        ),
+        text: `Карточка ${link.orderId} обновлена.\nЧтобы уточнить ещё — reply на это сообщение.`,
         replyToMessageId: msg.message_id,
-        parseMode: "HTML",
       }).catch(() => undefined);
 
       if (typeof confirmId === "number") {
@@ -510,15 +495,8 @@ export async function POST(request: NextRequest) {
     const confirmId = await telegramSendMessage({
       botToken,
       chatId: optopakChatId,
-      text: buildConfirmWithHiddenLink(
-        [
-          `Заявка ${orderId} отправлена в группу заявок.`,
-          "Чтобы уточнить параметры — сделайте reply на это сообщение.",
-        ],
-        link,
-      ),
+      text: `Заявка ${orderId} отправлена в группу заявок.\nЧтобы уточнить параметры — сделайте reply на это сообщение.`,
       replyToMessageId: msg.message_id,
-      parseMode: "HTML",
     }).catch(() => undefined);
 
     if (typeof confirmId === "number") {

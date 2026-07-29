@@ -17,33 +17,30 @@ export type OrderCardLink = {
 };
 
 type DurableLinkPayload = {
-  o: string; // orderId
-  c: number; // targetChatId
-  m: number; // targetMessageId
+  o: string;
+  c: number;
+  m: number;
   d: ParsedOrderData;
-  n: string; // managerFirstName
-  t?: string; // original optopak text (optional, truncated)
+  n: string;
+  t?: string;
 };
 
 /**
- * Вариант B: in-memory Map + durable `#oplink` в тексте confirmation-сообщения.
- * Map помогает в рамках одного инстанса; `#oplink` переживает cold start на Vercel.
- * Позже внутренности можно заменить на storage-backed вариант A без смены вызовов.
+ * Вариант B: in-memory индексы по message_id и orderId.
+ * Подтверждения бота без #oplink в тексте; reply ищет связь по памяти
+ * или по BM-… в тексте подтверждения. Позже можно заменить на storage (вариант A).
  */
 const linksByOptopakMessageId = new Map<number, OrderCardLink>();
+const linksByOrderId = new Map<string, OrderCardLink>();
 
-export function encodeOptopakLinkRef(link: OrderCardLink): string {
-  const payload: DurableLinkPayload = {
-    o: link.orderId,
-    c: link.targetChatId,
-    m: link.targetMessageId,
-    d: link.orderData,
-    n: link.managerFirstName,
-    t: link.optopakOriginalText.slice(0, 400),
-  };
-  return `#oplink:${Buffer.from(JSON.stringify(payload), "utf8").toString("base64url")}`;
+const ORDER_ID_RE = /\bBM-\d{8}-\d+\b/;
+
+export function extractOrderIdFromText(text: string | undefined | null): string | null {
+  if (!text) return null;
+  return text.match(ORDER_ID_RE)?.[0] ?? null;
 }
 
+/** Legacy: старые подтверждения могли содержать #oplink — оставляем разбор. */
 export function parseOptopakLinkRef(text: string | undefined | null): OrderCardLink | null {
   if (!text) return null;
   const match = text.match(/#oplink:([A-Za-z0-9_-]+)/);
@@ -69,7 +66,6 @@ export function parseOptopakLinkRef(text: string | undefined | null): OrderCardL
       orderData: d,
       managerFirstName: payload.n || "—",
       optopakOriginalText: payload.t || "",
-      // cardText восстанавливается вызывающей стороной через buildParserCardText
       cardText: "",
     };
   } catch {
@@ -82,6 +78,7 @@ export async function saveOptopakOrderLink(params: {
   link: OrderCardLink;
 }): Promise<void> {
   linksByOptopakMessageId.set(params.optopakMessageId, params.link);
+  linksByOrderId.set(params.link.orderId, params.link);
 }
 
 export async function findOptopakOrderLinkForReply(params: {
@@ -90,6 +87,14 @@ export async function findOptopakOrderLinkForReply(params: {
 }): Promise<OrderCardLink | null> {
   const fromMemory = linksByOptopakMessageId.get(params.replyToMessageId);
   if (fromMemory) return fromMemory;
+
+  const orderId = extractOrderIdFromText(params.replyToText);
+  if (orderId) {
+    const byOrder = linksByOrderId.get(orderId);
+    if (byOrder) return byOrder;
+  }
+
+  // Back-compat for older confirmations that still contain #oplink
   return parseOptopakLinkRef(params.replyToText);
 }
 
@@ -99,10 +104,15 @@ export async function updateLinkedCard(params: {
   orderData?: ParsedOrderData;
 }): Promise<void> {
   const link = linksByOptopakMessageId.get(params.optopakMessageId);
-  if (!link) return;
-  linksByOptopakMessageId.set(params.optopakMessageId, {
+  if (!link) {
+    // Try update by scanning order index if message map missed
+    return;
+  }
+  const next = {
     ...link,
     cardText: params.cardText,
     orderData: params.orderData ?? link.orderData,
-  });
+  };
+  linksByOptopakMessageId.set(params.optopakMessageId, next);
+  linksByOrderId.set(next.orderId, next);
 }
