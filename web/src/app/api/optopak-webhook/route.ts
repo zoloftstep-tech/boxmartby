@@ -12,6 +12,7 @@ import {
   findOptopakOrderLinkForReply,
   saveOptopakOrderLink,
   updateLinkedCard,
+  encodeOptopakLinkRef,
   type OrderCardLink,
   type ParsedOrderData,
 } from "@/lib/orderLinking";
@@ -20,7 +21,10 @@ type TelegramUser = { id: number; username?: string; first_name?: string; last_n
 
 type TelegramChat = { id: number };
 
-type TelegramReplyToMessage = { message_id: number };
+type TelegramReplyToMessage = {
+  message_id: number;
+  text?: string;
+};
 
 type TelegramMessage = {
   message_id: number;
@@ -272,13 +276,28 @@ export async function POST(request: NextRequest) {
     // Reply updates: edit already created parser card.
     if (msg.reply_to_message?.message_id) {
       const replyToMessageId = msg.reply_to_message.message_id;
-      const link = await findOptopakOrderLinkForReply({ replyToMessageId });
+      const replyToText = msg.reply_to_message.text ?? "";
+      let link = await findOptopakOrderLinkForReply({
+        replyToMessageId,
+        replyToText,
+      });
+
+      if (link && !link.cardText) {
+        link = {
+          ...link,
+          cardText: buildParserCardText({
+            orderData: link.orderData,
+            managerFirstName: link.managerFirstName,
+          }),
+        };
+      }
 
       if (!link) {
         await telegramSendMessage({
           botToken,
           chatId: optopakChatId,
-          text: "Не удалось найти связанную карточку заказа для уточнения. Пожалуйста, пришлите параметры в новом сообщении.",
+          text:
+            "Не удалось найти связанную карточку. Для уточнения сделайте reply на сообщение бота «Заявка BM-… отправлена…» (не на исходный текст заказа).",
           replyToMessageId: msg.message_id,
         }).catch(() => undefined);
         return NextResponse.json({ ok: true });
@@ -290,7 +309,7 @@ export async function POST(request: NextRequest) {
       }
 
       const replyChange = await parseReplyChange({
-        originalText: link.optopakOriginalText,
+        originalText: link.optopakOriginalText || replyToText,
         replyText: text,
       });
 
@@ -298,6 +317,12 @@ export async function POST(request: NextRequest) {
         ? applyChangeToOrderData({ current: link.orderData, change: replyChange })
         : null;
       if (!nextOrderData) {
+        await telegramSendMessage({
+          botToken,
+          chatId: optopakChatId,
+          text: "Не удалось распознать уточнение. Укажите конкретно, что меняем (например: «тираж 600»).",
+          replyToMessageId: msg.message_id,
+        }).catch(() => undefined);
         return NextResponse.json({ ok: true });
       }
 
@@ -308,26 +333,56 @@ export async function POST(request: NextRequest) {
         clarifierFirstName: managerFirstName,
       });
 
-      // Edit the already published Telegram message in target group.
-      await telegramEditMessageText({
-        botToken,
-        chatId: link.targetChatId,
-        messageId: link.targetMessageId,
-        text: updatedCardText,
-        replyMarkup: buildStatusKeyboard(link.orderId),
-      });
+      try {
+        await telegramEditMessageText({
+          botToken,
+          chatId: link.targetChatId,
+          messageId: link.targetMessageId,
+          text: updatedCardText,
+          replyMarkup: buildStatusKeyboard(link.orderId),
+        });
+      } catch (err) {
+        const detail = err instanceof Error ? err.message : String(err);
+        console.error("[optopak-webhook] edit target failed", detail);
+        await telegramSendMessage({
+          botToken,
+          chatId: optopakChatId,
+          text: `Не удалось обновить карточку ${link.orderId}: ${detail.slice(0, 300)}`,
+          replyToMessageId: msg.message_id,
+        }).catch(() => undefined);
+        return NextResponse.json({ ok: true });
+      }
 
-      await updateLinkedCard({ optopakMessageId: replyToMessageId, cardText: updatedCardText });
-      // Also map current reply message_id to the same target card
-      // so future clarifications in the chain can be linked.
+      const updatedLink: OrderCardLink = {
+        ...link,
+        cardText: updatedCardText,
+        orderData: nextOrderData,
+      };
+
+      await updateLinkedCard({
+        optopakMessageId: replyToMessageId,
+        cardText: updatedCardText,
+        orderData: nextOrderData,
+      });
       await saveOptopakOrderLink({
         optopakMessageId: msg.message_id,
-        link: {
-          ...link,
-          cardText: updatedCardText,
-          orderData: nextOrderData,
-        },
+        link: updatedLink,
       }).catch(() => undefined);
+
+      const confirmId = await telegramSendMessage({
+        botToken,
+        chatId: optopakChatId,
+        text: `Карточка ${link.orderId} обновлена.\nЧтобы уточнить ещё — reply на это сообщение.\n${encodeOptopakLinkRef(updatedLink)}`,
+        replyToMessageId: msg.message_id,
+      }).catch(() => undefined);
+
+      if (typeof confirmId === "number") {
+        await saveOptopakOrderLink({
+          optopakMessageId: confirmId,
+          link: updatedLink,
+        }).catch(() => undefined);
+      }
+
       return NextResponse.json({ ok: true });
     }
 
@@ -430,12 +485,16 @@ export async function POST(request: NextRequest) {
     await saveOptopakOrderLink({ optopakMessageId: msg.message_id, link });
     console.log("[optopak-webhook] published", { orderId, targetChatId, targetMessageId, fromChatId: optopakChatId });
 
-    await telegramSendMessage({
+    const confirmId = await telegramSendMessage({
       botToken,
       chatId: optopakChatId,
-      text: `Заявка ${orderId} отправлена в группу заявок.`,
+      text: `Заявка ${orderId} отправлена в группу заявок.\nЧтобы уточнить параметры — сделайте reply на это сообщение.\n${encodeOptopakLinkRef(link)}`,
       replyToMessageId: msg.message_id,
     }).catch(() => undefined);
+
+    if (typeof confirmId === "number") {
+      await saveOptopakOrderLink({ optopakMessageId: confirmId, link }).catch(() => undefined);
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {
