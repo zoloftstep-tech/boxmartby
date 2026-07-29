@@ -21,7 +21,8 @@ function formatItemLine(item: CalcItemResult, index: number): string {
 export function buildMessageText(order: OrderRequest, orderId: string): string {
   const itemsText = order.items.map((it, i) => formatItemLine(it, i)).join("\n");
 
-  return `Новый заказ с сайта #${orderId}
+  return `🌐 С сайта Boxmart.by
+Новый заказ #${orderId}
 
 Имя: ${order.name}
 Телефон: ${order.phone}
