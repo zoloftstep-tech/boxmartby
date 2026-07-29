@@ -52,8 +52,11 @@ export function formatStatusActor(from: {
   last_name?: string;
 }): string {
   if (from.username) return `@${from.username}`;
-  const name = [from.first_name, from.last_name].filter(Boolean).join(" ").trim();
-  return name || "админ";
+  // Per TZ: name should come from `from.username` / `from.first_name`.
+  // If username is missing, we prefer first_name (last_name as a fallback).
+  if (from.first_name) return from.first_name;
+  if (from.last_name) return from.last_name;
+  return "админ";
 }
 
 export function formatMinskNow(date = new Date()): string {
@@ -75,7 +78,8 @@ export function appendStatusHistory(
   actor: string,
   at: string = formatMinskNow(),
 ): string {
-  const line = `• ${STATUS_META[code].label} — ${actor} — ${at}`;
+  // TZ format: "статус · кто · когда"
+  const line = `${STATUS_META[code].button} · ${actor} · ${at}`;
   if (messageText.includes(HISTORY_HEADER)) {
     return `${messageText}\n${line}`;
   }
