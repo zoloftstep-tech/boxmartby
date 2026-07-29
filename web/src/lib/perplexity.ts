@@ -161,16 +161,22 @@ async function perplexityJson<T>(params: {
   });
 
   if (!response.ok) {
+    const errText = await response.text().catch(() => "");
+    console.error("[perplexity] API error", response.status, errText.slice(0, 500));
     return null;
   }
 
   const body = (await response.json().catch(() => null)) as unknown;
   const content = (body as any)?.choices?.[0]?.message?.content;
-  if (typeof content !== "string" || !content.trim()) return null;
+  if (typeof content !== "string" || !content.trim()) {
+    console.error("[perplexity] empty content", JSON.stringify(body)?.slice(0, 500));
+    return null;
+  }
 
   try {
     return JSON.parse(content) as T;
-  } catch {
+  } catch (err) {
+    console.error("[perplexity] JSON parse failed", content.slice(0, 500), err);
     return null;
   }
 }

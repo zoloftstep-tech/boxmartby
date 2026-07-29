@@ -24,7 +24,7 @@ type TelegramReplyToMessage = { message_id: number };
 
 type TelegramMessage = {
   message_id: number;
-  from: TelegramUser;
+  from?: TelegramUser;
   chat: TelegramChat;
   text?: string;
   reply_to_message?: TelegramReplyToMessage;
@@ -212,14 +212,21 @@ function getRecentContext(chatId: number, excludingNewest: string): string[] {
 export async function POST(request: NextRequest) {
   const secret = process.env.TELEGRAM_PARSER_WEBHOOK_SECRET;
   const botToken = process.env.TELEGRAM_PARSER_BOT_TOKEN;
-  const targetChatId = process.env.TELEGRAM_CHAT_ID ? Number(process.env.TELEGRAM_CHAT_ID) : null;
+  const targetChatIdRaw = process.env.TELEGRAM_CHAT_ID?.trim() ?? "";
+  const targetChatId = targetChatIdRaw ? Number(targetChatIdRaw) : null;
 
-  if (!secret || !botToken || !targetChatId) {
+  if (!secret || !botToken || !targetChatId || Number.isNaN(targetChatId)) {
+    console.error("[optopak-webhook] env missing", {
+      hasSecret: Boolean(secret),
+      hasBotToken: Boolean(botToken),
+      targetChatIdRaw,
+    });
     return NextResponse.json({ ok: false, error: "parser bot env not configured" }, { status: 500 });
   }
 
   const header = request.headers.get("x-telegram-bot-api-secret-token");
   if (header !== secret) {
+    console.error("[optopak-webhook] secret mismatch");
     return NextResponse.json({ ok: false }, { status: 401 });
   }
 
@@ -230,141 +237,182 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "invalid json" }, { status: 400 });
   }
 
-  // 1) Callback queries: status buttons edit the same message.
-  if (update.callback_query) {
-    await handleStatusCallbackUpdate(botToken, update);
-    return NextResponse.json({ ok: true });
-  }
+  try {
+    // 1) Callback queries: status buttons edit the same message.
+    if (update.callback_query) {
+      await handleStatusCallbackUpdate(botToken, update);
+      return NextResponse.json({ ok: true });
+    }
 
-  // 2) Ordinary messages from Optopak.
-  const msg = update.message;
-  if (!msg || typeof msg.text !== "string" || !msg.text.trim()) {
-    return NextResponse.json({ ok: true });
-  }
+    // 2) Ordinary messages from Optopak.
+    const msg = update.message;
+    if (!msg || typeof msg.text !== "string" || !msg.text.trim()) {
+      console.log("[optopak-webhook] ignore: no text message", {
+        hasMessage: Boolean(msg),
+        keys: Object.keys(update),
+      });
+      return NextResponse.json({ ok: true });
+    }
 
-  const optopakChatId = msg.chat.id;
-  const managerFirstName = msg.from.first_name ?? "—";
-  const text = msg.text.trim();
+    const optopakChatId = msg.chat.id;
+    const managerFirstName = msg.from?.first_name ?? "—";
+    const text = msg.text.trim();
 
-  // Keep recent context no matter what, so is_new_order can use it.
-  const previousContext = getRecentContext(optopakChatId, text);
-  pushRecentText(optopakChatId, text);
+    console.log("[optopak-webhook] message", {
+      chatId: optopakChatId,
+      messageId: msg.message_id,
+      textPreview: text.slice(0, 120),
+      isReply: Boolean(msg.reply_to_message?.message_id),
+    });
 
-  // Reply updates: edit already created parser card.
-  if (msg.reply_to_message?.message_id) {
-    const replyToMessageId = msg.reply_to_message.message_id;
-    const link = await findOptopakOrderLinkForReply({ replyToMessageId });
+    // Keep recent context no matter what, so is_new_order can use it.
+    const previousContext = getRecentContext(optopakChatId, text);
+    pushRecentText(optopakChatId, text);
 
-    if (!link) {
+    // Reply updates: edit already created parser card.
+    if (msg.reply_to_message?.message_id) {
+      const replyToMessageId = msg.reply_to_message.message_id;
+      const link = await findOptopakOrderLinkForReply({ replyToMessageId });
+
+      if (!link) {
+        await telegramSendMessage({
+          botToken,
+          chatId: optopakChatId,
+          text: "Не удалось найти связанную карточку заказа для уточнения. Пожалуйста, пришлите параметры в новом сообщении.",
+          replyToMessageId: msg.message_id,
+        }).catch(() => undefined);
+        return NextResponse.json({ ok: true });
+      }
+
+      // Perplexity parse changes
+      if (!/\d/.test(text)) {
+        return NextResponse.json({ ok: true });
+      }
+
+      const replyChange = await parseReplyChange({
+        originalText: link.optopakOriginalText,
+        replyText: text,
+      });
+
+      const nextOrderData = replyChange.has_change
+        ? applyChangeToOrderData({ current: link.orderData, change: replyChange })
+        : null;
+      if (!nextOrderData) {
+        return NextResponse.json({ ok: true });
+      }
+
+      const updatedCardText = applyReplyChangeToCardText({
+        oldCardText: link.cardText,
+        nextOrderData,
+        replyChange,
+        clarifierFirstName: managerFirstName,
+      });
+
+      // Edit the already published Telegram message in target group.
+      await telegramEditMessageText({
+        botToken,
+        chatId: link.targetChatId,
+        messageId: link.targetMessageId,
+        text: updatedCardText,
+        replyMarkup: buildStatusKeyboard(link.orderId),
+      });
+
+      await updateLinkedCard({ optopakMessageId: replyToMessageId, cardText: updatedCardText });
+      // Also map current reply message_id to the same target card
+      // so future clarifications in the chain can be linked.
+      await saveOptopakOrderLink({
+        optopakMessageId: msg.message_id,
+        link: {
+          ...link,
+          cardText: updatedCardText,
+          orderData: nextOrderData,
+        },
+      }).catch(() => undefined);
+      return NextResponse.json({ ok: true });
+    }
+
+    // New order messages
+    if (!looksLikeOrderMessage(text)) {
+      console.log("[optopak-webhook] ignore: heuristic miss");
+      return NextResponse.json({ ok: true });
+    }
+
+    if (!process.env.PERPLEXITY_API_KEY) {
+      console.error("[optopak-webhook] PERPLEXITY_API_KEY missing");
       await telegramSendMessage({
         botToken,
         chatId: optopakChatId,
-        text: "Не удалось найти связанную карточку заказа для уточнения. Пожалуйста, пришлите параметры в новом сообщении.",
+        text: "Парсер временно не может распознать заявку: не задан PERPLEXITY_API_KEY.",
         replyToMessageId: msg.message_id,
       }).catch(() => undefined);
       return NextResponse.json({ ok: true });
     }
 
-    // Perplexity parse changes
-    if (!/\\d/.test(text)) {
+    const parsed = await parseOrderFromOptopak({
+      text,
+      recentContext: previousContext,
+    });
+
+    console.log("[optopak-webhook] perplexity result", {
+      is_order_data: parsed.is_order_data,
+      is_new_order: parsed.is_new_order,
+      length: parsed.length,
+      width: parsed.width,
+      height: parsed.height,
+      quantity: parsed.quantity,
+      price_per_unit: parsed.price_per_unit,
+    });
+
+    if (!parsed.is_order_data || !parsed.is_new_order) {
       return NextResponse.json({ ok: true });
     }
 
-    const replyChange = await parseReplyChange({
-      originalText: link.optopakOriginalText,
-      replyText: text,
-    });
-
-    const nextOrderData = replyChange.has_change ? applyChangeToOrderData({ current: link.orderData, change: replyChange }) : null;
-    if (!nextOrderData) {
+    const normalizedOrder = normalizeParsedOrder(parsed);
+    if (!normalizedOrder) {
+      const missing = getMissingFields(parsed);
+      const missingText =
+        missing.length === 0
+          ? "Проверьте диапазоны: ДШВ (50–2000 мм), тираж (целое > 0), цена ( > 0)."
+          : missing.map(humanizeMissingField).join(", ");
+      await telegramSendMessage({
+        botToken,
+        chatId: optopakChatId,
+        text: `Не хватает данных для заказа. Уточните: ${missingText}.`,
+        replyToMessageId: msg.message_id,
+      }).catch(() => undefined);
       return NextResponse.json({ ok: true });
     }
 
-    const updatedCardText = applyReplyChangeToCardText({
-      oldCardText: link.cardText,
-      nextOrderData,
-      replyChange,
-      clarifierFirstName: managerFirstName,
+    const orderId = `BM-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
+
+    const cardText = buildParserCardText({
+      orderData: normalizedOrder,
+      managerFirstName,
     });
 
-    // Edit the already published Telegram message in target group.
-    await telegramEditMessageText({
+    const targetMessageId = await telegramSendMessage({
       botToken,
-      chatId: link.targetChatId,
-      messageId: link.targetMessageId,
-      text: updatedCardText,
-      replyMarkup: buildStatusKeyboard(link.orderId),
+      chatId: targetChatId,
+      text: cardText,
+      replyMarkup: buildStatusKeyboard(orderId),
     });
 
-    await updateLinkedCard({ optopakMessageId: replyToMessageId, cardText: updatedCardText });
-    // Also map current reply message_id to the same target card
-    // so future clarifications in the chain can be linked.
-    await saveOptopakOrderLink({
-      optopakMessageId: msg.message_id,
-      link: {
-        ...link,
-        cardText: updatedCardText,
-        orderData: nextOrderData,
-      },
-    }).catch(() => undefined);
+    const link: OrderCardLink = {
+      orderId,
+      targetChatId,
+      targetMessageId,
+      cardText,
+      orderData: normalizedOrder,
+      optopakOriginalText: text,
+      managerFirstName,
+    };
+
+    await saveOptopakOrderLink({ optopakMessageId: msg.message_id, link });
+    console.log("[optopak-webhook] published", { orderId, targetChatId, targetMessageId });
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("[optopak-webhook] unhandled error", err);
     return NextResponse.json({ ok: true });
   }
-
-  // New order messages
-  if (!looksLikeOrderMessage(text)) {
-    return NextResponse.json({ ok: true });
-  }
-
-  const parsed = await parseOrderFromOptopak({
-    text,
-    recentContext: previousContext,
-  });
-
-  if (!parsed.is_order_data || !parsed.is_new_order) {
-    return NextResponse.json({ ok: true });
-  }
-
-  const normalizedOrder = normalizeParsedOrder(parsed);
-  if (!normalizedOrder) {
-    const missing = getMissingFields(parsed);
-    const missingText =
-      missing.length === 0
-        ? "Проверьте диапазоны: ДШВ (50–2000 мм), тираж (целое > 0), цена ( > 0)."
-        : missing.map(humanizeMissingField).join(", ");
-    await telegramSendMessage({
-      botToken,
-      chatId: optopakChatId,
-      text: `Не хватает данных для заказа. Уточните: ${missingText}.`,
-      replyToMessageId: msg.message_id,
-    }).catch(() => undefined);
-    return NextResponse.json({ ok: true });
-  }
-
-  const orderId = `BM-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
-
-  const cardText = buildParserCardText({
-    orderData: normalizedOrder,
-    managerFirstName,
-  });
-
-  const targetMessageId = await telegramSendMessage({
-    botToken,
-    chatId: targetChatId,
-    text: cardText,
-    replyMarkup: buildStatusKeyboard(orderId),
-  });
-
-  const link: OrderCardLink = {
-    orderId,
-    targetChatId,
-    targetMessageId,
-    cardText,
-    orderData: normalizedOrder,
-    optopakOriginalText: text,
-    managerFirstName,
-  };
-
-  await saveOptopakOrderLink({ optopakMessageId: msg.message_id, link });
-  return NextResponse.json({ ok: true });
 }
 

@@ -156,8 +156,12 @@ export function looksLikeOrderMessage(text: string): boolean {
   if (!/\d/.test(t)) return false;
 
   const hasDims =
-    /(\d+\s*[xх*на]\s*){2}\d+/.test(t) || /(мм|д×ш×в|длина|ширина|высота)/.test(t);
+    /(\d+\s*[xх*×]\s*){2}\d+/.test(t) ||
+    /\d+\s+на\s+\d+\s+на\s+\d+/.test(t) ||
+    /(мм|д×ш×в|длина|ширина|высота)/.test(t);
   const hasQtyOrPrice = /(шт|штук|тираж)/.test(t) || /(руб|byn|за штуку|цена)/.test(t);
-  return hasDims || hasQtyOrPrice;
+  // Fallback: several numbers in one message (e.g. "600 400 400 500 2.5")
+  const numberCount = (t.match(/\d+(?:[.,]\d+)?/g) ?? []).length;
+  return hasDims || hasQtyOrPrice || numberCount >= 4;
 }
 
