@@ -5,6 +5,7 @@ import {
   STATUS_META,
   buildStatusKeyboard,
 } from "@/lib/telegram-status";
+import { syncOrderLinkCardText } from "@/lib/orderLinking";
 
 export type TelegramUser = {
   id: number;
@@ -80,6 +81,7 @@ export async function handleStatusCallbackUpdate(botToken: string, update: Teleg
       text: newText,
       reply_markup: buildStatusKeyboard(parsed.orderId),
     });
+    await syncOrderLinkCardText(parsed.orderId, newText).catch(() => undefined);
   } catch (err) {
     console.error("[telegram/status-callback]", err);
     await telegramApi(botToken, "answerCallbackQuery", {

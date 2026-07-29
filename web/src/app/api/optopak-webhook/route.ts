@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { buildStatusKeyboard } from "@/lib/telegram-status";
+import { buildStatusKeyboard, getLastStatusLine } from "@/lib/telegram-status";
 import { handleStatusCallbackUpdate } from "@/lib/telegram-status-callback";
-import { applyReplyChangeToCardText, buildParserCardText, hasOrderDimensions, looksLikeOrderMessage } from "@/lib/parser-bot";
+import {
+  applyReplyChangeToCardText,
+  buildParserCardText,
+  hasOrderDimensions,
+  isStatusQueryReply,
+  looksLikeOperationalNoise,
+  looksLikeOrderMessage,
+} from "@/lib/parser-bot";
 import {
   parseOrderFromOptopak,
   parseReplyChange,
@@ -197,6 +204,17 @@ function applyChangeToOrderData(params: {
   return normalized;
 }
 
+function buildStatusReplyText(link: OrderCardLink): string {
+  const last = getLastStatusLine(link.cardText);
+  if (last) {
+    return `Статус заказа ${link.orderId}: ${last}`;
+  }
+  if (link.cardText) {
+    return `По заказу ${link.orderId} статус ещё не проставляли.`;
+  }
+  return `Не удалось прочитать статус по ${link.orderId}. Смотрите группу заявок.`;
+}
+
 // In-memory context for is_new_order classification.
 const recentTextsByChatId = new Map<number, string[]>();
 const RECENT_LIMIT = 5;
@@ -293,18 +311,36 @@ export async function POST(request: NextRequest) {
         };
       }
 
+      const wantStatus = isStatusQueryReply(text);
+
       if (!link) {
         await telegramSendMessage({
           botToken,
           chatId: optopakChatId,
-          text:
-            "Не удалось найти связанную карточку. Сделайте reply на сообщение бота «Заявка BM-… отправлена…» вскоре после создания заявки.",
+          text: wantStatus
+            ? "Не удалось прочитать статус (кэш сброшен). Смотрите группу заявок."
+            : "Не удалось найти связанную карточку. Сделайте reply на сообщение бота «Заявка BM-… отправлена…» вскоре после создания заявки.",
           replyToMessageId: msg.message_id,
         }).catch(() => undefined);
         return NextResponse.json({ ok: true });
       }
 
-      // Perplexity parse changes
+      if (wantStatus) {
+        await telegramSendMessage({
+          botToken,
+          chatId: optopakChatId,
+          text: buildStatusReplyText(link),
+          replyToMessageId: msg.message_id,
+        }).catch(() => undefined);
+        return NextResponse.json({ ok: true });
+      }
+
+      if (looksLikeOperationalNoise(text)) {
+        console.log("[optopak-webhook] reply ignore: operational noise");
+        return NextResponse.json({ ok: true });
+      }
+
+      // Field changes need a number; otherwise silent ignore.
       if (!/\d/.test(text)) {
         return NextResponse.json({ ok: true });
       }
@@ -314,9 +350,30 @@ export async function POST(request: NextRequest) {
         replyText: text,
       });
 
-      const nextOrderData = replyChange.has_change
-        ? applyChangeToOrderData({ current: link.orderData, change: replyChange })
-        : null;
+      console.log("[optopak-webhook] reply intent", {
+        intent: replyChange.intent,
+        has_change: replyChange.has_change,
+      });
+
+      if (replyChange.intent === "status_query") {
+        await telegramSendMessage({
+          botToken,
+          chatId: optopakChatId,
+          text: buildStatusReplyText(link),
+          replyToMessageId: msg.message_id,
+        }).catch(() => undefined);
+        return NextResponse.json({ ok: true });
+      }
+
+      if (replyChange.intent === "ignore" || !replyChange.has_change) {
+        console.log("[optopak-webhook] reply ignore: perplexity");
+        return NextResponse.json({ ok: true });
+      }
+
+      const nextOrderData = applyChangeToOrderData({
+        current: link.orderData,
+        change: replyChange,
+      });
       if (!nextOrderData) {
         await telegramSendMessage({
           botToken,

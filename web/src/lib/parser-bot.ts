@@ -171,3 +171,47 @@ export function looksLikeOrderMessage(text: string): boolean {
   return hasOrderDimensions(text) || numberCount >= 4;
 }
 
+/** Reply: вопрос о статусе / этапе заказа. */
+export function isStatusQueryReply(text: string): boolean {
+  const t = text.toLowerCase().replace(/\s+/g, " ").trim();
+  if (!t) return false;
+  return (
+    /статус/.test(t) ||
+    /на каком этапе/.test(t) ||
+    /какой этап/.test(t) ||
+    /где заказ/.test(t) ||
+    /готов\s*\?/.test(t) ||
+    /готово\s*\?/.test(t) ||
+    /когда будет/.test(t)
+  );
+}
+
+/**
+ * Операционный шум без явной правки полей карточки
+ * («100шт есть», «можно забрать», «нужно срочно 50шт»).
+ */
+export function looksLikeOperationalNoise(text: string): boolean {
+  const t = text.toLowerCase().replace(/\s+/g, " ").trim();
+  if (!t) return false;
+
+  const hasExplicitChange =
+    /измен(и|ить|яем|ите)/.test(t) ||
+    /поставь|поставить|поставьте/.test(t) ||
+    /вместо/.test(t) ||
+    /\bцена\b/.test(t) ||
+    /тираж\s+.+\s+на\b/.test(t) ||
+    /сделай\s+\d/.test(t) ||
+    /длину|ширину|высоту/.test(t);
+
+  if (hasExplicitChange) return false;
+
+  return (
+    /\bесть\b/.test(t) ||
+    /готов(ы|о|а)?\b/.test(t) ||
+    /можно забрать|забрать/.test(t) ||
+    /срочн/.test(t) ||
+    /самовывоз/.test(t) ||
+    /на склад/.test(t)
+  );
+}
+

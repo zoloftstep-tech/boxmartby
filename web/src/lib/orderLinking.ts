@@ -116,3 +116,16 @@ export async function updateLinkedCard(params: {
   linksByOptopakMessageId.set(params.optopakMessageId, next);
   linksByOrderId.set(next.orderId, next);
 }
+
+/** После нажатия статус-кнопки: обновить cardText у всех in-memory ссылок на заказ. */
+export async function syncOrderLinkCardText(orderId: string, cardText: string): Promise<void> {
+  const byOrder = linksByOrderId.get(orderId);
+  if (byOrder) {
+    linksByOrderId.set(orderId, { ...byOrder, cardText });
+  }
+  for (const [messageId, link] of linksByOptopakMessageId) {
+    if (link.orderId === orderId) {
+      linksByOptopakMessageId.set(messageId, { ...link, cardText });
+    }
+  }
+}

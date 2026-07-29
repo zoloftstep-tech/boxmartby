@@ -85,3 +85,17 @@ export function appendStatusHistory(
   }
   return `${messageText}${HISTORY_HEADER}\n${line}`;
 }
+
+/** Последняя строка из блока «——— Статусы ———», или null если блока нет. */
+export function getLastStatusLine(cardText: string | undefined | null): string | null {
+  if (!cardText) return null;
+  const idx = cardText.indexOf(HISTORY_HEADER);
+  if (idx === -1) return null;
+  const block = cardText.slice(idx + HISTORY_HEADER.length).trim();
+  if (!block) return null;
+  const lines = block
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  return lines[lines.length - 1] ?? null;
+}

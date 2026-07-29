@@ -44,23 +44,27 @@ const ORDER_PARSE_PROMPT = `Ты — модуль распознавания з�
 Важно: отвечай ТОЛЬКО в формате JSON согласно заданной схеме, без 
 дополнительных пояснений, комментариев или текста до/после JSON.`;
 
-const ORDER_REPLY_PARSE_PROMPT = `Ты — модуль распознавания уточнений к уже существующему заказу коробок 
-компании БОКСМАРТ. Твоя задача — определить, какое именно поле заказа меняется и на какое 
-новое значение.
+const ORDER_REPLY_PARSE_PROMPT = `Ты — модуль классификации reply-сообщений к уже созданной заявке на коробки БОКСМАРТ.
 
-Возможные поля: length, width, height, quantity, price_per_unit.
+Верни intent: field_change | status_query | ignore.
 
-Правила:
-- Если сообщение содержит конкретное новое числовое значение для одного 
-  из полей заказа — укажи field_changed (название поля) и new_value 
-  (новое значение)
-- Если сообщение меняет несколько полей одновременно, верни массив 
-  изменений changes с парами field и value для каждого
-- Если сообщение не содержит конкретного нового значения (например, это 
-  просто вопрос, комментарий без чисел, или неоднозначная фраза без 
-  указания того, что именно меняется) — верни has_change: false
+intent = status_query:
+- вопросы о текущем этапе заказа: «какой статус», «на каком этапе», «готов?», «когда будет» в смысле статуса, без правки параметров заказа.
 
-Отвечай ТОЛЬКО в формате JSON согласно заданной схеме, без пояснений.`;
+intent = field_change:
+- явная правка параметров заказа: изменить/поставить/сделать тираж, цену, длину/ширину/высоту.
+- примеры: «тираж 600», «цена 1.5», «поставь 100 шт», «изменить высоту на 300», «вместо 50 сделай 80».
+- для field_change заполни field_changed + new_value и/или changes[{field,value}].
+- поля: length, width, height, quantity, price_per_unit.
+
+intent = ignore:
+- операционный контекст, даже если есть числа: «100шт есть», «можно забрать», «нужно срочно 50шт», «готовы», наличие на складе, срочность, самовывоз, комментарии без явной правки карточки.
+- число + «есть/готовы/срочно/забрать» без глагола изменения параметров → ignore, НЕ field_change.
+- неоднозначные фразы без явной правки → ignore.
+
+has_change должен быть true только при intent=field_change, иначе false.
+
+Отвечай ТОЛЬКО JSON по схеме, без пояснений.`;
 
 export type ParsedOrder = {
   is_order_data: boolean;
@@ -72,16 +76,15 @@ export type ParsedOrder = {
   price_per_unit: number | null;
 };
 
-export type ParsedOrderChange =
-  | {
-      has_change: false;
-    }
-  | {
-      has_change: true;
-      field_changed?: string;
-      new_value?: number;
-      changes?: Array<{ field: string; value: number }>;
-    };
+export type ReplyIntent = "field_change" | "status_query" | "ignore";
+
+export type ParsedOrderChange = {
+  intent: ReplyIntent;
+  has_change: boolean;
+  field_changed?: string | null;
+  new_value?: number | null;
+  changes?: Array<{ field: string; value: number }> | null;
+};
 
 const ORDER_SCHEMA = {
   type: "object",
@@ -110,6 +113,7 @@ const ORDER_REPLY_CHANGE_SCHEMA = {
   type: "object",
   additionalProperties: false,
   properties: {
+    intent: { type: "string", enum: ["field_change", "status_query", "ignore"] },
     has_change: { type: "boolean" },
     field_changed: { type: ["string", "null"] },
     new_value: { type: ["number", "null"] },
@@ -126,7 +130,7 @@ const ORDER_REPLY_CHANGE_SCHEMA = {
       },
     },
   },
-  required: ["has_change"],
+  required: ["intent", "has_change"],
 };
 
 async function perplexityJson<T>(params: {
@@ -233,13 +237,37 @@ export async function parseOrderFromOptopak(params: {
   return data;
 }
 
+function normalizeReplyChange(data: ParsedOrderChange): ParsedOrderChange {
+  const intent: ReplyIntent =
+    data.intent === "field_change" || data.intent === "status_query" || data.intent === "ignore"
+      ? data.intent
+      : data.has_change
+        ? "field_change"
+        : "ignore";
+
+  const hasFieldPayload =
+    Boolean(data.changes?.length) ||
+    (Boolean(data.field_changed) && typeof data.new_value === "number");
+
+  const has_change =
+    intent === "field_change" && (Boolean(data.has_change) || hasFieldPayload);
+
+  return {
+    intent: has_change ? "field_change" : intent === "status_query" ? "status_query" : intent,
+    has_change,
+    field_changed: data.field_changed ?? null,
+    new_value: data.new_value ?? null,
+    changes: data.changes ?? null,
+  };
+}
+
 export async function parseReplyChange(params: {
   originalText: string;
   replyText: string;
 }): Promise<ParsedOrderChange> {
   const apiKey = process.env.PERPLEXITY_API_KEY;
   if (!apiKey) {
-    return { has_change: false };
+    return { intent: "ignore", has_change: false };
   }
 
   const userInput = `Исходная заявка менеджера:\n${params.originalText}\n\nНовый текст (reply):\n${params.replyText}`;
@@ -253,7 +281,7 @@ export async function parseReplyChange(params: {
       schemaName: "order_reply_change",
     });
 
-  if (!data) return { has_change: false };
-  return data;
+  if (!data) return { intent: "ignore", has_change: false };
+  return normalizeReplyChange(data);
 }
 
