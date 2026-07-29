@@ -363,7 +363,8 @@ export async function POST(request: NextRequest) {
       price_per_unit: parsed.price_per_unit,
     });
 
-    if (!parsed.is_order_data || !parsed.is_new_order) {
+    if (!parsed.is_order_data) {
+      console.log("[optopak-webhook] ignore: not order data");
       return NextResponse.json({ ok: true });
     }
 
@@ -383,6 +384,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
+    // Full valid order in a non-reply message is treated as a new card even if
+    // the LLM marked is_new_order=false (common false negative with chat context).
+    if (!parsed.is_new_order) {
+      console.log("[optopak-webhook] is_new_order=false but fields complete — publishing anyway");
+    }
+
     const orderId = `BM-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
 
     const cardText = buildParserCardText({
@@ -390,12 +397,25 @@ export async function POST(request: NextRequest) {
       managerFirstName,
     });
 
-    const targetMessageId = await telegramSendMessage({
-      botToken,
-      chatId: targetChatId,
-      text: cardText,
-      replyMarkup: buildStatusKeyboard(orderId),
-    });
+    let targetMessageId: number;
+    try {
+      targetMessageId = await telegramSendMessage({
+        botToken,
+        chatId: targetChatId,
+        text: cardText,
+        replyMarkup: buildStatusKeyboard(orderId),
+      });
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      console.error("[optopak-webhook] send to target failed", { targetChatId, detail });
+      await telegramSendMessage({
+        botToken,
+        chatId: optopakChatId,
+        text: `Не удалось отправить карточку в группу заявок (chat_id=${targetChatId}). Проверьте, что парсер-бот добавлен в целевую группу и TELEGRAM_CHAT_ID верный.\n\n${detail.slice(0, 300)}`,
+        replyToMessageId: msg.message_id,
+      }).catch(() => undefined);
+      return NextResponse.json({ ok: true });
+    }
 
     const link: OrderCardLink = {
       orderId,
@@ -408,7 +428,15 @@ export async function POST(request: NextRequest) {
     };
 
     await saveOptopakOrderLink({ optopakMessageId: msg.message_id, link });
-    console.log("[optopak-webhook] published", { orderId, targetChatId, targetMessageId });
+    console.log("[optopak-webhook] published", { orderId, targetChatId, targetMessageId, fromChatId: optopakChatId });
+
+    await telegramSendMessage({
+      botToken,
+      chatId: optopakChatId,
+      text: `Заявка ${orderId} отправлена в группу заявок.`,
+      replyToMessageId: msg.message_id,
+    }).catch(() => undefined);
+
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[optopak-webhook] unhandled error", err);

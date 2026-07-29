@@ -218,6 +218,7 @@ export async function parseOrderFromOptopak(params: {
 
   // If parsing failed -> treat as not an order.
   if (!data) {
+    console.error("[perplexity] parseOrderFromOptopak failed — returning empty");
     return {
       is_order_data: false,
       is_new_order: false,
