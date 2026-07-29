@@ -22,8 +22,11 @@
 - `TELEGRAM_BOT_TOKEN`
 - `TELEGRAM_CHAT_ID`
 - `TELEGRAM_WEBHOOK_SECRET` — случайная строка (защита webhook статусов заказа)
+- `TELEGRAM_PARSER_BOT_TOKEN` — токен второго бота (парсер «Оптопак»)
+- `TELEGRAM_PARSER_WEBHOOK_SECRET` — секрет webhook второго бота
 - `GMAIL_USER`
 - `GMAIL_APP_PASSWORD`
+- `PERPLEXITY_API_KEY`
 - `ALLOWED_ORIGIN` — URL сайта на Vercel, например `https://your-project.vercel.app` (без слэша в конце)
 
 Локальный `.env.local` на Vercel не попадает.
@@ -45,3 +48,21 @@ curl "https://api.telegram.org/bot$TOKEN/setWebhook" \
 Проверка: `curl "https://api.telegram.org/bot$TOKEN/getWebhookInfo"`.
 
 Заявки с сайта получают inline-кнопки статусов; нажатие редактирует то же сообщение (история в Europe/Minsk).
+
+## Telegram webhook (парсер «Оптопак»)
+
+После деплоя добавьте `TELEGRAM_PARSER_BOT_TOKEN` и `TELEGRAM_PARSER_WEBHOOK_SECRET`, затем один раз привяжите webhook второго бота к prod URL:
+
+```bash
+export TOKEN="…"          # TELEGRAM_PARSER_BOT_TOKEN
+export SECRET="…"         # тот же TELEGRAM_PARSER_WEBHOOK_SECRET, что на Vercel
+
+curl "https://api.telegram.org/bot$TOKEN/setWebhook" \
+  -d "url=https://boxmartby.vercel.app/api/optopak-webhook" \
+  -d "secret_token=$SECRET" \
+  -d 'allowed_updates=["message","callback_query"]'
+```
+
+Проверка: `curl "https://api.telegram.org/bot$TOKEN/getWebhookInfo"`.
+
+Парсер получает сообщения в группе «Оптопак», публикует карточки с inline-кнопками статусов в `TELEGRAM_CHAT_ID` и обрабатывает reply-уточнения.
