@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { buildStatusKeyboard } from "@/lib/telegram-status";
 import { handleStatusCallbackUpdate } from "@/lib/telegram-status-callback";
-import { applyReplyChangeToCardText, buildParserCardText, looksLikeOrderMessage } from "@/lib/parser-bot";
+import { applyReplyChangeToCardText, buildParserCardText, hasOrderDimensions, looksLikeOrderMessage } from "@/lib/parser-bot";
 import {
   parseOrderFromOptopak,
   parseReplyChange,
@@ -69,6 +69,7 @@ async function telegramSendMessage(params: {
   text: string;
   replyToMessageId?: number;
   replyMarkup?: Record<string, unknown>;
+  parseMode?: "HTML" | "MarkdownV2";
 }): Promise<number> {
   const response = await fetch(`https://api.telegram.org/bot${params.botToken}/sendMessage`, {
     method: "POST",
@@ -78,6 +79,7 @@ async function telegramSendMessage(params: {
       text: params.text,
       reply_to_message_id: params.replyToMessageId,
       reply_markup: params.replyMarkup,
+      parse_mode: params.parseMode,
       disable_web_page_preview: true,
     }),
   });
@@ -89,6 +91,16 @@ async function telegramSendMessage(params: {
 
   const body = (await response.json()) as any;
   return body?.result?.message_id as number;
+}
+
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function buildConfirmWithHiddenLink(humanLines: string[], link: OrderCardLink): string {
+  const human = humanLines.map(escapeHtml).join("\n");
+  const ref = escapeHtml(encodeOptopakLinkRef(link));
+  return `${human}\n<tg-spoiler>${ref}</tg-spoiler>`;
 }
 
 async function telegramEditMessageText(params: {
@@ -372,8 +384,12 @@ export async function POST(request: NextRequest) {
       const confirmId = await telegramSendMessage({
         botToken,
         chatId: optopakChatId,
-        text: `Карточка ${link.orderId} обновлена.\nЧтобы уточнить ещё — reply на это сообщение.\n${encodeOptopakLinkRef(updatedLink)}`,
+        text: buildConfirmWithHiddenLink(
+          [`Карточка ${link.orderId} обновлена.`, "Чтобы уточнить ещё — reply на это сообщение."],
+          updatedLink,
+        ),
         replyToMessageId: msg.message_id,
+        parseMode: "HTML",
       }).catch(() => undefined);
 
       if (typeof confirmId === "number") {
@@ -425,6 +441,12 @@ export async function POST(request: NextRequest) {
 
     const normalizedOrder = normalizeParsedOrder(parsed);
     if (!normalizedOrder) {
+      // Incomplete without dimensions = noise/status update — ignore silently.
+      if (!hasOrderDimensions(text)) {
+        console.log("[optopak-webhook] ignore: incomplete without dimensions");
+        return NextResponse.json({ ok: true });
+      }
+
       const missing = getMissingFields(parsed);
       const missingText =
         missing.length === 0
@@ -488,8 +510,15 @@ export async function POST(request: NextRequest) {
     const confirmId = await telegramSendMessage({
       botToken,
       chatId: optopakChatId,
-      text: `Заявка ${orderId} отправлена в группу заявок.\nЧтобы уточнить параметры — сделайте reply на это сообщение.\n${encodeOptopakLinkRef(link)}`,
+      text: buildConfirmWithHiddenLink(
+        [
+          `Заявка ${orderId} отправлена в группу заявок.`,
+          "Чтобы уточнить параметры — сделайте reply на это сообщение.",
+        ],
+        link,
+      ),
       replyToMessageId: msg.message_id,
+      parseMode: "HTML",
     }).catch(() => undefined);
 
     if (typeof confirmId === "number") {

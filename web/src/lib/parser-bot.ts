@@ -147,21 +147,27 @@ export function applyReplyChangeToCardText(params: {
 }
 
 /**
+ * Есть ли в тексте явные габариты заказа (Д×Ш×В и т.п.).
+ */
+export function hasOrderDimensions(text: string): boolean {
+  const t = text.toLowerCase();
+  return (
+    /(\d+\s*[xх*×]\s*){2}\d+/.test(t) ||
+    /\d+\s+на\s+\d+\s+на\s+\d+/.test(t) ||
+    /(мм|д×ш×в|длина|ширина|высота)/.test(t)
+  );
+}
+
+/**
  * Дешевая эвристика до Perplexity:
- * - сообщение должно содержать хотя бы 1-2 числа
- * - и быть похожим на размеры/количество/цену
+ * в парсинг идут только сообщения с габаритами или с ≥4 числами.
+ * Одного «шт/тираж» недостаточно (отсекает «100 штук готовы»).
  */
 export function looksLikeOrderMessage(text: string): boolean {
   const t = text.toLowerCase();
   if (!/\d/.test(t)) return false;
 
-  const hasDims =
-    /(\d+\s*[xх*×]\s*){2}\d+/.test(t) ||
-    /\d+\s+на\s+\d+\s+на\s+\d+/.test(t) ||
-    /(мм|д×ш×в|длина|ширина|высота)/.test(t);
-  const hasQtyOrPrice = /(шт|штук|тираж)/.test(t) || /(руб|byn|за штуку|цена)/.test(t);
-  // Fallback: several numbers in one message (e.g. "600 400 400 500 2.5")
   const numberCount = (t.match(/\d+(?:[.,]\d+)?/g) ?? []).length;
-  return hasDims || hasQtyOrPrice || numberCount >= 4;
+  return hasOrderDimensions(text) || numberCount >= 4;
 }
 
