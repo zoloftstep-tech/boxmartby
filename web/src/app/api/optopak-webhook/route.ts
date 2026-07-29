@@ -3,11 +3,14 @@ import { buildStatusKeyboard, getLastStatusLine } from "@/lib/telegram-status";
 import { handleStatusCallbackUpdate } from "@/lib/telegram-status-callback";
 import {
   applyReplyChangeToCardText,
+  buildCreateConfirmText,
   buildParserCardText,
+  buildUpdateConfirmText,
   hasOrderDimensions,
   isStatusQueryReply,
   looksLikeOperationalNoise,
   looksLikeOrderMessage,
+  MANAGER_HELP_TEXT,
 } from "@/lib/parser-bot";
 import {
   parseOrderFromOptopak,
@@ -281,6 +284,17 @@ export async function POST(request: NextRequest) {
     const managerFirstName = msg.from?.first_name ?? "—";
     const text = msg.text.trim();
 
+    // /help and /start — manager guide (commands may include @BotName).
+    if (/^\/(help|start)(?:@\w+)?(?:\s|$)/i.test(text)) {
+      await telegramSendMessage({
+        botToken,
+        chatId: optopakChatId,
+        text: MANAGER_HELP_TEXT,
+        replyToMessageId: msg.message_id,
+      }).catch(() => undefined);
+      return NextResponse.json({ ok: true });
+    }
+
     console.log("[optopak-webhook] message", {
       chatId: optopakChatId,
       messageId: msg.message_id,
@@ -430,7 +444,7 @@ export async function POST(request: NextRequest) {
       const confirmId = await telegramSendMessage({
         botToken,
         chatId: optopakChatId,
-        text: `Карточка ${link.orderId} обновлена.\nЧтобы уточнить ещё — reply на это сообщение.`,
+        text: buildUpdateConfirmText(link.orderId, link.orderData, nextOrderData),
         replyToMessageId: msg.message_id,
       }).catch(() => undefined);
 
@@ -552,7 +566,7 @@ export async function POST(request: NextRequest) {
     const confirmId = await telegramSendMessage({
       botToken,
       chatId: optopakChatId,
-      text: `Заявка ${orderId} отправлена в группу заявок.\nЧтобы уточнить параметры — сделайте reply на это сообщение.`,
+      text: buildCreateConfirmText(orderId, normalizedOrder),
       replyToMessageId: msg.message_id,
     }).catch(() => undefined);
 

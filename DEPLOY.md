@@ -66,3 +66,5 @@ curl "https://api.telegram.org/bot$TOKEN/setWebhook" \
 Проверка: `curl "https://api.telegram.org/bot$TOKEN/getWebhookInfo"`.
 
 Парсер получает сообщения в группе «Оптопак», публикует карточки с inline-кнопками статусов в `TELEGRAM_CHAT_ID` и обрабатывает reply-уточнения.
+
+Инструкция для менеджеров (закреп / `/help`): [`web/docs/optopak-manager-guide.md`](web/docs/optopak-manager-guide.md).

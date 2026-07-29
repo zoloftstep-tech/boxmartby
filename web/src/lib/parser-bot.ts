@@ -6,6 +6,21 @@ const SOURCE_LABEL = "📋 Из группы «Оптопак»";
 const STATUS_HISTORY_HEADER = "\n\n——— Статусы ———";
 const EDIT_HISTORY_HEADER = "\n\n——— Уточнения ———";
 
+/** Краткая инструкция для менеджеров (закреп в группе / ответ на /help|/start). */
+export const MANAGER_HELP_TEXT = `Как работать с заявками БОКСМАРТ
+
+Новая заявка — одним сообщением: габариты (Д×Ш×В в мм), тираж, цена за шт.
+Пример: 600x400x400 500шт 2.5
+
+Правка — reply на сообщение бота «Заявка BM-… отправлена…»:
+• тираж 600
+• цена 1.5
+
+Статус — reply на то же подтверждение: какой статус
+
+Бот не меняет карточку на фразы вроде «100шт есть», «можно забрать», «срочно».
+Неполные статусные сообщения новой заявкой не считаются.`;
+
 function formatMoney(value: number): string {
   return value.toFixed(2);
 }
@@ -14,9 +29,70 @@ function formatDimensions(data: ParsedOrderData): string {
   return `${data.length}×${data.width}×${data.height} мм`;
 }
 
+function formatDimensionsPair(data: ParsedOrderData): string {
+  return `${data.length}×${data.width}×${data.height}`;
+}
+
 function computeVolumeLiters(data: ParsedOrderData): number {
   // mm^3 -> liters: 1 liter = 1e6 mm^3
   return (data.length * data.width * data.height) / 1_000_000;
+}
+
+/** Строки параметров для подтверждения создания заявки. */
+export function formatOrderConfirmSummary(orderData: ParsedOrderData): string {
+  return [
+    `Габариты: ${formatDimensions(orderData)}`,
+    `Тираж: ${orderData.quantity} шт`,
+    `Цена за штуку: ${formatMoney(orderData.price_per_unit)} BYN/шт`,
+  ].join("\n");
+}
+
+/** Diff «было → стало» только по изменившимся полям. */
+export function formatOrderChangeDiff(
+  before: ParsedOrderData,
+  after: ParsedOrderData,
+): string {
+  const lines: string[] = [];
+  const dimsChanged =
+    before.length !== after.length ||
+    before.width !== after.width ||
+    before.height !== after.height;
+
+  if (dimsChanged) {
+    lines.push(
+      `Габариты: ${formatDimensionsPair(before)} → ${formatDimensionsPair(after)} мм`,
+    );
+  }
+  if (before.quantity !== after.quantity) {
+    lines.push(`Тираж: ${before.quantity} → ${after.quantity} шт`);
+  }
+  if (before.price_per_unit !== after.price_per_unit) {
+    lines.push(
+      `Цена за штуку: ${formatMoney(before.price_per_unit)} → ${formatMoney(after.price_per_unit)} BYN/шт`,
+    );
+  }
+  return lines.join("\n");
+}
+
+export function buildCreateConfirmText(orderId: string, orderData: ParsedOrderData): string {
+  return [
+    `Заявка ${orderId} отправлена в группу заявок.`,
+    formatOrderConfirmSummary(orderData),
+    "Чтобы уточнить параметры — сделайте reply на это сообщение.",
+  ].join("\n");
+}
+
+export function buildUpdateConfirmText(
+  orderId: string,
+  before: ParsedOrderData,
+  after: ParsedOrderData,
+): string {
+  const diff = formatOrderChangeDiff(before, after);
+  return [
+    `Карточка ${orderId} обновлена.`,
+    ...(diff ? [diff] : []),
+    "Чтобы уточнить ещё — reply на это сообщение.",
+  ].join("\n");
 }
 
 export function buildParserCardText(params: {
