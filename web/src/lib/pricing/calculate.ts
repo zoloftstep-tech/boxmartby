@@ -1,17 +1,12 @@
 import type { CalcItemInput, CalcItemResult, CalcResponse } from "@/lib/types";
 import {
-  AREA_SURCHARGE,
   CATEGORY_LABELS,
-  MATERIAL_PRICES,
-  MIN_DIMS,
-  QTY_TIERS_OPT,
-  REFERENCE_MATERIAL,
-  VAT_PERCENT,
   type AreaSurchargeRule,
   type BoxCategory,
   type MaterialId,
   type QtyTier,
 } from "./pricing-config";
+import { localPricingConfig, type LivePricingConfig } from "./remote-defaults";
 
 export type PricingInput = CalcItemInput;
 
@@ -47,7 +42,7 @@ export function areaSurchargeFor(area: number, rules: AreaSurchargeRule[] = AREA
   return 0;
 }
 
-export function validateItem(item: PricingInput): string | null {
+export function validateItem(item: PricingInput, pricing: LivePricingConfig = localPricingConfig()): string | null {
   const { length: A, width: B, height: H, quantity, category, material } = item;
 
   if (category !== "fourFlap" && category !== "selfLock") {
@@ -67,14 +62,14 @@ export function validateItem(item: PricingInput): string | null {
     }
   }
 
-  if (A < MIN_DIMS.minL) {
-    return `Длина (A) не менее ${MIN_DIMS.minL} мм`;
+  if (A < pricing.minL) {
+    return `Длина (A) не менее ${pricing.minL} мм`;
   }
-  if (B < MIN_DIMS.minW) {
-    return `Ширина (B) не менее ${MIN_DIMS.minW} мм`;
+  if (B < pricing.minW) {
+    return `Ширина (B) не менее ${pricing.minW} мм`;
   }
-  if (B + H < MIN_DIMS.minWH) {
-    return `Сумма ширины и высоты (B+H) не менее ${MIN_DIMS.minWH} мм`;
+  if (B + H < pricing.minWH) {
+    return `Сумма ширины и высоты (B+H) не менее ${pricing.minWH} мм`;
   }
   if (!Number.isInteger(quantity) || quantity < 1 || quantity > 100000) {
     return "quantity: целое число 1–100000";
@@ -87,7 +82,10 @@ export function validateItem(item: PricingInput): string | null {
  * unitNet = area × (baseCoef + areaSurcharge) + area × (cardCost − refCost)
  * совпадает с calculateResult() в boxcalculator (discount = 0, mode = opt)
  */
-export function calculateItem(item: PricingInput): CalcItemResult {
+export function calculateItem(
+  item: PricingInput,
+  pricing: LivePricingConfig = localPricingConfig(),
+): CalcItemResult {
   const A = item.length;
   const B = item.width;
   const H = item.height;
@@ -95,13 +93,13 @@ export function calculateItem(item: PricingInput): CalcItemResult {
   const material = item.material as MaterialId;
 
   const area = blankArea(category, A, B, H);
-  const tiers = QTY_TIERS_OPT[category];
+  const tiers = pricing.tiersOpt[category];
   const baseCoef = tierForQty(tiers, item.quantity).coef;
-  const surcharge = areaSurchargeFor(area);
+  const surcharge = areaSurchargeFor(area, pricing.areaSurcharge);
   const finalCoef = baseCoef + surcharge;
 
-  const cardCost = MATERIAL_PRICES[material].costPerSqM;
-  const refCost = MATERIAL_PRICES[REFERENCE_MATERIAL].costPerSqM;
+  const cardCost = pricing.materials[material].costPerSqM;
+  const refCost = pricing.materials[pricing.referenceMaterial].costPerSqM;
   const costDiff = area * (cardCost - refCost);
 
   const unitNet = area * finalCoef + costDiff;
@@ -116,7 +114,7 @@ export function calculateItem(item: PricingInput): CalcItemResult {
     category,
     material,
     category_label: CATEGORY_LABELS[category],
-    material_label: MATERIAL_PRICES[material].label,
+    material_label: pricing.materials[material].label,
     volume_liters: Math.round(volume * 10) / 10,
     area_m2: area,
     price_per_unit_no_vat: unitNet,
@@ -124,10 +122,13 @@ export function calculateItem(item: PricingInput): CalcItemResult {
   };
 }
 
-export function calculateItems(items: PricingInput[]): CalcResponse {
-  const results = items.map(calculateItem);
+export function calculateItems(
+  items: PricingInput[],
+  pricing: LivePricingConfig = localPricingConfig(),
+): CalcResponse {
+  const results = items.map((item) => calculateItem(item, pricing));
   const totalNoVat = results.reduce((sum, r) => sum + (r.total_price_no_vat ?? 0), 0);
-  const vatRate = VAT_PERCENT / 100;
+  const vatRate = pricing.vat / 100;
 
   return {
     items: results,

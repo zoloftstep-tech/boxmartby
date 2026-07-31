@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { calculateItems, validateItem } from "@/lib/pricing";
+import { getLivePricingConfig } from "@/lib/pricing/remote-defaults";
 import type { CalcItemInput, CalcRequest } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
@@ -14,6 +15,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "items: обязательный непустой массив" }, { status: 400 });
   }
 
+  const pricing = await getLivePricingConfig();
   const items: CalcItemInput[] = [];
 
   for (const raw of body.items) {
@@ -26,7 +28,7 @@ export async function POST(req: NextRequest) {
       material: raw.material ?? "t23",
     };
 
-    const err = validateItem(item);
+    const err = validateItem(item, pricing);
     if (err) {
       return NextResponse.json({ error: err }, { status: 400 });
     }
@@ -34,5 +36,5 @@ export async function POST(req: NextRequest) {
     items.push(item);
   }
 
-  return NextResponse.json(calculateItems(items));
+  return NextResponse.json(calculateItems(items, pricing));
 }
