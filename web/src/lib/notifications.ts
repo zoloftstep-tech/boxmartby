@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import type { CalcItemResult, OrderRequest } from "@/lib/types";
+import { buildStatusKeyboard } from "@/lib/telegram-status";
 
 /** 600×400×400 в любом порядке — пометка в тексте уведомления */
 export function isSpecialRetailDims(length: number, width: number, height: number): boolean {
@@ -20,7 +21,8 @@ function formatItemLine(item: CalcItemResult, index: number): string {
 export function buildMessageText(order: OrderRequest, orderId: string): string {
   const itemsText = order.items.map((it, i) => formatItemLine(it, i)).join("\n");
 
-  return `Новый заказ с сайта #${orderId}
+  return `🌐 С сайта Boxmart.by
+Новый заказ #${orderId}
 
 Имя: ${order.name}
 Телефон: ${order.phone}
@@ -34,7 +36,7 @@ ${itemsText}
 Итого с НДС: ${formatMoney(order.summary.total_with_vat)} BYN`;
 }
 
-export async function sendTelegramMessage(text: string): Promise<void> {
+export async function sendTelegramMessage(text: string, orderId: string): Promise<void> {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
 
@@ -46,7 +48,11 @@ export async function sendTelegramMessage(text: string): Promise<void> {
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, text }),
+    body: JSON.stringify({
+      chat_id: chatId,
+      text,
+      reply_markup: buildStatusKeyboard(orderId),
+    }),
   });
 
   if (!response.ok) {

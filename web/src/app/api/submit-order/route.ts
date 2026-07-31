@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   const messageText = buildMessageText(order, order_id);
 
   const results = await Promise.allSettled([
-    sendTelegramMessage(messageText),
+    sendTelegramMessage(messageText, order_id),
     sendEmailNotification(messageText, order),
   ]);
 
