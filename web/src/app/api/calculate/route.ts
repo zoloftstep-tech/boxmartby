@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "items: обязательный непустой массив" }, { status: 400 });
   }
 
-  const pricing = await getLivePricingConfig();
+  const { pricing, source } = await getLivePricingConfig();
   const items: CalcItemInput[] = [];
 
   for (const raw of body.items) {
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       height: Number(raw.height),
       quantity: Number(raw.quantity),
       category: raw.category ?? "fourFlap",
-      material: raw.material ?? "t23",
+      material: raw.material ?? "t22",
     };
 
     const err = validateItem(item, pricing);
@@ -36,5 +36,7 @@ export async function POST(req: NextRequest) {
     items.push(item);
   }
 
-  return NextResponse.json(calculateItems(items, pricing));
+  const res = NextResponse.json(calculateItems(items, pricing));
+  res.headers.set("X-Pricing-Source", source);
+  return res;
 }

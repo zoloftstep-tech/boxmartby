@@ -99,28 +99,38 @@ export function pricingFromRemote(data: RemoteDefaults): LivePricingConfig {
   };
 }
 
-let cache: { at: number; value: LivePricingConfig } | null = null;
+let cache: { at: number; value: LivePricingConfig; source: "remote" } | null = null;
 const TTL_MS = 60_000;
 
-export async function getLivePricingConfig(): Promise<LivePricingConfig> {
+export type PricingSource = "remote" | "local";
+
+export async function getLivePricingConfig(): Promise<{
+  pricing: LivePricingConfig;
+  source: PricingSource;
+}> {
   const url = process.env.CALCULATOR_DEFAULTS_URL;
   const key = process.env.CALCULATOR_DEFAULTS_API_KEY;
-  if (!url || !key) return localPricingConfig();
+  if (!url || !key) {
+    console.warn("CALCULATOR_DEFAULTS_URL/API_KEY not set, using local pricing-config");
+    return { pricing: localPricingConfig(), source: "local" };
+  }
 
-  if (cache && Date.now() - cache.at < TTL_MS) return cache.value;
+  if (cache && Date.now() - cache.at < TTL_MS) {
+    return { pricing: cache.value, source: cache.source };
+  }
 
   try {
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${key}` },
-      next: { revalidate: 60 },
+      cache: "no-store",
     });
     if (!res.ok) throw new Error(`defaults HTTP ${res.status}`);
     const data = (await res.json()) as RemoteDefaults;
     const value = pricingFromRemote(data);
-    cache = { at: Date.now(), value };
-    return value;
+    cache = { at: Date.now(), value, source: "remote" };
+    return { pricing: value, source: "remote" };
   } catch (e) {
     console.error("CALCULATOR_DEFAULTS fetch failed, using local", e);
-    return localPricingConfig();
+    return { pricing: localPricingConfig(), source: "local" };
   }
 }

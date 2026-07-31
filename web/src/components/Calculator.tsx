@@ -29,7 +29,7 @@ function emptyItem(): DraftItem {
     height: "",
     quantity: "100",
     category: "fourFlap",
-    material: "t23",
+    material: "t22",
   };
 }
 
@@ -40,7 +40,7 @@ function toPayload(items: DraftItem[]) {
     height: Number(item.height),
     quantity: Number(item.quantity),
     category: item.category ?? "fourFlap",
-    material: item.material ?? "t23",
+    material: item.material ?? "t22",
   }));
 }
 
@@ -58,6 +58,13 @@ function isSpecialRetailDims(length: string, width: string, height: string): boo
 const SPECIAL_RETAIL_NOTICE =
   "Это специальная розничная позиция. Пожалуйста, позвоните или напишите нам, и мы предложим вам наиболее актуальную и выгодную цену. Вы также можете оставить заявку через форму — менеджер уточнит условия.";
 
+/** Временно в UI только Т-22; t23/t24 остаются в типах и pricing API. */
+const SELECTABLE_MATERIALS: { id: MaterialId; label: string }[] = [
+  { id: "t22", label: "Т-22" },
+  // { id: "t23", label: "Т-23" },
+  // { id: "t24", label: "Т-24" },
+];
+
 
 export function Calculator() {
   const [items, setItems] = useState<DraftItem[]>([emptyItem()]);
@@ -68,13 +75,14 @@ export function Calculator() {
   const [modalOpen, setModalOpen] = useState(false);
   const seq = useRef(0);
 
-  // HMR / старый state мог быть без category/material — дозаполняем
+  // HMR / старый state мог быть без category/material — дозаполняем; материал только из SELECTABLE
   useEffect(() => {
+    const allowed = new Set(SELECTABLE_MATERIALS.map((m) => m.id));
     setItems((prev) =>
       prev.map((item) => ({
         ...item,
         category: item.category ?? "fourFlap",
-        material: item.material ?? "t23",
+        material: allowed.has(item.material) ? item.material : "t22",
       })),
     );
   }, []);
@@ -216,9 +224,11 @@ export function Calculator() {
                       onChange={(e) => updateSelect(item.id, "material", e.target.value as MaterialId)}
                       className="focus-ring mt-1.5 w-full cursor-pointer rounded-md border border-line bg-white px-3 py-2.5 text-sm text-ink"
                     >
-                      <option value="t22">Т-22</option>
-                      <option value="t23">Т-23</option>
-                      <option value="t24">Т-24</option>
+                      {SELECTABLE_MATERIALS.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.label}
+                        </option>
+                      ))}
                     </select>
                   </label>
 

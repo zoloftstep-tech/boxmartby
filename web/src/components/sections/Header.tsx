@@ -31,7 +31,7 @@ export function Header() {
     >
       <div className="section-pad">
         <div className="container-site flex h-16 items-center justify-between gap-4 md:h-[4.5rem]">
-          <a href="#top" className="focus-ring group flex min-w-0 cursor-pointer items-center gap-2.5 sm:gap-3">
+          <a href="#top" className="focus-ring group flex min-w-0 flex-1 cursor-pointer items-center gap-2 sm:gap-3">
             <Image
               src="/logo-mark.png"
               alt=""
@@ -41,10 +41,10 @@ export function Header() {
               priority
             />
             <span className="min-w-0">
-              <span className="font-display block text-lg font-semibold tracking-tight text-ink md:text-xl">
+              <span className="font-display block truncate text-base font-semibold tracking-tight text-ink sm:text-lg md:text-xl">
                 БОКСМАРТ
               </span>
-              <span className="mt-0.5 block truncate text-[11px] text-muted sm:text-xs">
+              <span className="mt-0.5 hidden truncate text-[11px] text-muted sm:block sm:text-xs">
                 Производство картонной упаковки в Минске
               </span>
             </span>
@@ -62,19 +62,20 @@ export function Header() {
             ))}
           </nav>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
             <a
-              href="tel:+375170000000"
+              href="tel:+375296168169"
               className="focus-ring hidden cursor-pointer items-center gap-2 text-sm font-medium text-ink md:inline-flex"
             >
               <IconPhone className="h-4 w-4 text-cta" />
-              +375 (17) 000-00-00
+              +375 (29) 616-81-69
             </a>
             <a
               href="#calculator"
-              className="focus-ring inline-flex cursor-pointer items-center rounded-md bg-cta px-3.5 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-cta-hover"
+              className="focus-ring inline-flex cursor-pointer items-center whitespace-nowrap rounded-md bg-cta px-2.5 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:bg-cta-hover sm:px-3.5 sm:text-sm"
             >
-              Рассчитать стоимость
+              <span className="sm:hidden">Рассчитать</span>
+              <span className="hidden sm:inline">Рассчитать стоимость</span>
             </a>
             <button
               type="button"
@@ -109,11 +110,11 @@ export function Header() {
               </a>
             ))}
             <a
-              href="tel:+375170000000"
+              href="tel:+375296168169"
               className="focus-ring mt-1 cursor-pointer rounded-md px-3 py-2.5 text-sm font-medium text-cta"
               onClick={() => setOpen(false)}
             >
-              +375 (17) 000-00-00
+              +375 (29) 616-81-69
             </a>
           </nav>
         </div>

@@ -1,5 +1,6 @@
 import type { CalcItemInput, CalcItemResult, CalcResponse } from "@/lib/types";
 import {
+  AREA_SURCHARGE,
   CATEGORY_LABELS,
   type AreaSurchargeRule,
   type BoxCategory,

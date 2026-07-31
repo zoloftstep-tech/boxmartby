@@ -32,15 +32,15 @@ export function Footer() {
             </h2>
             <ul className="mt-4 space-y-3 text-sm">
               <li>
-                <a href="tel:+375170000000" className="focus-ring inline-flex cursor-pointer items-center gap-2 hover:text-white">
+                <a href="tel:+375296168169" className="focus-ring inline-flex cursor-pointer items-center gap-2 hover:text-white">
                   <IconPhone className="h-4 w-4 text-kraft-soft" />
-                  +375 (17) 000-00-00
+                  +375 (29) 616-81-69
                 </a>
               </li>
               <li>
-                <a href="mailto:info@boxmart.by" className="focus-ring inline-flex cursor-pointer items-center gap-2 hover:text-white">
+                <a href="mailto:boxmartprod@gmail.com" className="focus-ring inline-flex cursor-pointer items-center gap-2 hover:text-white">
                   <IconMail className="h-4 w-4 text-kraft-soft" />
-                  info@boxmart.by
+                  boxmartprod@gmail.com
                 </a>
               </li>
               <li className="flex gap-2">
@@ -61,13 +61,12 @@ export function Footer() {
             <p className="mt-4 text-sm leading-relaxed">
               г. Минск
               <br />
-              {/* Адрес уточняется при заказе / в договоре */}
-              Адрес производства — по запросу менеджера
+              Адрес производства — ул. Притыцкого 62
             </p>
             <p className="mt-4 text-xs leading-relaxed text-slate-500">
-              УНП: — · р/с: —
+              УНП: 193915237
               <br />
-              Полные реквизиты — в PDF
+              Полные реквизиты — в документах ниже
             </p>
           </div>
 
@@ -77,14 +76,14 @@ export function Footer() {
             </h2>
             <div className="mt-4 flex flex-col gap-2">
               <a
-                href="/docs/requisites.pdf"
+                href="/docs/requisites.docx"
                 className="focus-ring inline-flex cursor-pointer items-center gap-2 rounded-md border border-white/15 px-3 py-2.5 text-sm font-medium text-white transition-colors duration-200 hover:border-white/30 hover:bg-white/5"
               >
                 <IconDownload className="h-4 w-4" />
                 Скачать реквизиты
               </a>
               <a
-                href="/docs/contract-template.pdf"
+                href="/docs/contract-template.docx"
                 className="focus-ring inline-flex cursor-pointer items-center gap-2 rounded-md border border-white/15 px-3 py-2.5 text-sm font-medium text-white transition-colors duration-200 hover:border-white/30 hover:bg-white/5"
               >
                 <IconDownload className="h-4 w-4" />
