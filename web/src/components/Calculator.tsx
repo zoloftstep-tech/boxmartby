@@ -370,7 +370,10 @@ export function Calculator() {
                   </p>
                 )}
 
-                {item.category === "selfLock" && (
+                {item.category === "selfLock" &&
+                  Number(item.length) > 0 &&
+                  Number(item.width) > 0 &&
+                  Number(item.height) > 0 && (
                   <p
                     role="status"
                     className="mt-3 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2.5 text-sm leading-relaxed text-amber-950"
