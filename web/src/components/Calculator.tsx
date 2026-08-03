@@ -668,7 +668,7 @@ function OrderModal({
                 <p className="text-[11px] leading-relaxed text-muted">
                   Нажимая «Оформить заявку», я соглашаюсь на обработку персональных данных согласно{" "}
                   <a
-                    href="/docs/personal-data-policy.doc"
+                    href="/docs/personal-data-policy.pdf"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-cta underline-offset-2 hover:underline"
@@ -677,7 +677,7 @@ function OrderModal({
                   </a>{" "}
                   и{" "}
                   <a
-                    href="/docs/personal-data-terms.docx"
+                    href="/docs/personal-data-terms.pdf"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-cta underline-offset-2 hover:underline"

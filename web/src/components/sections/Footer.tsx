@@ -76,14 +76,14 @@ export function Footer() {
             </h2>
             <div className="mt-4 flex flex-col gap-2">
               <a
-                href="/docs/requisites.docx"
+                href="/docs/requisites.pdf"
                 className="focus-ring inline-flex cursor-pointer items-center gap-2 rounded-md border border-white/15 px-3 py-2.5 text-sm font-medium text-white transition-colors duration-200 hover:border-white/30 hover:bg-white/5"
               >
                 <IconDownload className="h-4 w-4" />
                 Скачать реквизиты
               </a>
               <a
-                href="/docs/contract-template.docx"
+                href="/docs/contract-template.pdf"
                 className="focus-ring inline-flex cursor-pointer items-center gap-2 rounded-md border border-white/15 px-3 py-2.5 text-sm font-medium text-white transition-colors duration-200 hover:border-white/30 hover:bg-white/5"
               >
                 <IconDownload className="h-4 w-4" />
@@ -97,7 +97,7 @@ export function Footer() {
           <p>© {new Date().getFullYear()} ООО «БОКСМАРТ». Все права защищены.</p>
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-x-4 sm:gap-y-1">
             <a
-              href="/docs/personal-data-terms.docx"
+              href="/docs/personal-data-terms.pdf"
               target="_blank"
               rel="noopener noreferrer"
               className="focus-ring cursor-pointer text-slate-400 hover:text-white"
@@ -105,7 +105,7 @@ export function Footer() {
               Условия обработки персональных данных
             </a>
             <a
-              href="/docs/personal-data-policy.doc"
+              href="/docs/personal-data-policy.pdf"
               target="_blank"
               rel="noopener noreferrer"
               className="focus-ring cursor-pointer text-slate-400 hover:text-white"
