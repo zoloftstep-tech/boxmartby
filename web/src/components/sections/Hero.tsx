@@ -54,7 +54,7 @@ export function Hero() {
 
           <div className="relative animate-[fade-up_0.7s_ease-out_0.12s_both]">
             <div className="relative mx-auto max-w-md lg:max-w-none">
-              <IsometricBox className="w-full drop-shadow-sm motion-safe:animate-[float-soft_6s_ease-in-out_infinite]" />
+              <IsometricBox className="w-full drop-shadow-sm" />
             </div>
           </div>
         </div>
