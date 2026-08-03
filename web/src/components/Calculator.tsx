@@ -665,6 +665,27 @@ function OrderModal({
                 >
                   {submitting ? "Отправка…" : "Отправить заказ"}
                 </button>
+                <p className="text-[11px] leading-relaxed text-muted">
+                  Нажимая «Оформить заявку», я соглашаюсь на обработку персональных данных согласно{" "}
+                  <a
+                    href="/docs/personal-data-policy.doc"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-cta underline-offset-2 hover:underline"
+                  >
+                    Положению о политике
+                  </a>{" "}
+                  и{" "}
+                  <a
+                    href="/docs/personal-data-terms.docx"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-cta underline-offset-2 hover:underline"
+                  >
+                    Условиям обработки
+                  </a>
+                  .
+                </p>
               </form>
             </>
           )}
