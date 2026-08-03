@@ -41,9 +41,9 @@
   }
 }
 
-/* Hero isometric box: flat blank → assemble, then pointer tilt */
+/* Hero isometric box: soft blank → assemble, then yaw (rotateY) */
 .hero-box {
-  perspective: 900px;
+  perspective: 1100px;
   transform-style: preserve-3d;
 }
 
@@ -60,8 +60,8 @@
   transform-box: fill-box;
   transform-origin: center;
   transition:
-    opacity 0.55s ease,
-    transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 0.9s cubic-bezier(0.33, 1, 0.32, 1),
+    transform 1.15s cubic-bezier(0.33, 1, 0.32, 1);
 }
 
 .hero-box-blank {
@@ -74,71 +74,91 @@
 }
 
 .hero-box-face-left {
-  transform: translate(-48px, 28px) scale(0.72) rotate(-8deg);
+  transform: translate(-28px, 16px) scale(0.88) rotate(-4deg);
   opacity: 0;
 }
 
 .hero-box-face-right {
-  transform: translate(48px, 28px) scale(0.72) rotate(8deg);
+  transform: translate(28px, 16px) scale(0.88) rotate(4deg);
   opacity: 0;
 }
 
-.hero-box-face-top {
-  transform: translateY(-36px) scale(0.85);
+.hero-box-face-floor {
+  transform: translateY(12px) scale(0.92);
+  opacity: 0;
+}
+
+.hero-box-flap-left {
+  transform: translate(-20px, -18px) scale(0.9) rotate(-6deg);
+  opacity: 0;
+}
+
+.hero-box-flap-right {
+  transform: translate(20px, -18px) scale(0.9) rotate(6deg);
   opacity: 0;
 }
 
 .hero-box-dims {
   opacity: 0;
-  transform: translateY(10px);
+  transform: translateY(6px);
 }
 
 .hero-box-shadow {
-  opacity: 0.35;
-  transform: scaleX(0.7);
+  opacity: 0.3;
+  transform: scaleX(0.82);
 }
 
 .hero-box.is-assembled .hero-box-blank {
   opacity: 0;
-  transform: scale(0.88) translateY(12px);
-  transition-duration: 0.45s;
+  transform: scale(0.94) translateY(8px);
+  transition-duration: 0.7s;
   pointer-events: none;
 }
 
 .hero-box.is-assembled .hero-box-iso {
   opacity: 1;
-  transition-delay: 0.15s;
+  transition-delay: 0.25s;
 }
 
 .hero-box.is-assembled .hero-box-face-left,
 .hero-box.is-assembled .hero-box-face-right,
-.hero-box.is-assembled .hero-box-face-top {
+.hero-box.is-assembled .hero-box-face-floor,
+.hero-box.is-assembled .hero-box-flap-left,
+.hero-box.is-assembled .hero-box-flap-right {
   opacity: 1;
   transform: none;
 }
 
 .hero-box.is-assembled .hero-box-face-left {
-  transition-delay: 0.2s;
-}
-
-.hero-box.is-assembled .hero-box-face-right {
   transition-delay: 0.35s;
 }
 
-.hero-box.is-assembled .hero-box-face-top {
+.hero-box.is-assembled .hero-box-face-right {
   transition-delay: 0.5s;
+}
+
+.hero-box.is-assembled .hero-box-face-floor {
+  transition-delay: 0.6s;
+}
+
+.hero-box.is-assembled .hero-box-flap-left {
+  transition-delay: 0.85s;
+}
+
+.hero-box.is-assembled .hero-box-flap-right {
+  transition-delay: 1.05s;
 }
 
 .hero-box.is-assembled .hero-box-dims {
   opacity: 1;
   transform: none;
-  transition-delay: 0.85s;
+  transition-delay: 1.45s;
 }
 
 .hero-box.is-assembled .hero-box-shadow {
   opacity: 1;
   transform: scaleX(1);
-  transition-delay: 0.4s;
+  transition-delay: 0.55s;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -157,7 +177,9 @@
   .hero-box .hero-box-iso,
   .hero-box .hero-box-face-left,
   .hero-box .hero-box-face-right,
-  .hero-box .hero-box-face-top,
+  .hero-box .hero-box-face-floor,
+  .hero-box .hero-box-flap-left,
+  .hero-box .hero-box-flap-right,
   .hero-box .hero-box-dims,
   .hero-box .hero-box-shadow {
     opacity: 1;
