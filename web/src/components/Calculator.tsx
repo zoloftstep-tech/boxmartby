@@ -361,6 +361,24 @@ export function Calculator() {
                   </label>
                 </div>
 
+                {item.category === "ourDies" && (
+                  <p
+                    role="status"
+                    className="mt-3 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2.5 text-sm leading-relaxed text-amber-950"
+                  >
+                    {OUR_DIES_NOTICE}
+                  </p>
+                )}
+
+                {item.category === "selfLock" && (
+                  <p
+                    role="status"
+                    className="mt-3 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2.5 text-sm leading-relaxed text-amber-950"
+                  >
+                    {SELF_LOCK_NOTICE}
+                  </p>
+                )}
+
                 <div className="mt-4 grid gap-3 border-t border-line pt-4 sm:grid-cols-2 lg:grid-cols-4">
                   <div>
                     <p className="text-xs text-muted">Внутренний объём</p>
@@ -396,24 +414,6 @@ export function Calculator() {
                     className="mt-4 rounded-md border border-kraft/30 bg-kraft-soft/50 px-3 py-2.5 text-sm leading-relaxed text-kraft-dark"
                   >
                     {SPECIAL_RETAIL_NOTICE}
-                  </p>
-                )}
-
-                {item.category === "ourDies" && (
-                  <p
-                    role="status"
-                    className="mt-4 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2.5 text-sm leading-relaxed text-amber-950"
-                  >
-                    {OUR_DIES_NOTICE}
-                  </p>
-                )}
-
-                {item.category === "selfLock" && (
-                  <p
-                    role="status"
-                    className="mt-4 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2.5 text-sm leading-relaxed text-amber-950"
-                  >
-                    {SELF_LOCK_NOTICE}
                   </p>
                 )}
 
