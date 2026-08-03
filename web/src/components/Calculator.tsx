@@ -389,7 +389,7 @@ export function Calculator() {
                   <div>
                     <p className="text-xs text-muted">Площадь заготовки</p>
                     <p className="mt-1 font-display text-lg font-semibold text-ink">
-                      {result ? `${result.area_m2.toFixed(4)} м²` : "—"}
+                      {result ? `${result.area_m2.toFixed(2)} м²` : "—"}
                     </p>
                   </div>
                   <div>

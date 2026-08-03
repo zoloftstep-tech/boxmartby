@@ -143,7 +143,9 @@ export function calculateItem(
   const category = item.category as BoxCategory;
   const material = item.material as MaterialId;
 
-  const area = blankArea(category, A, B, H, die?.formulaTypeId);
+  const rawArea = blankArea(category, A, B, H, die?.formulaTypeId);
+  // Округление до сотых: и показ, и расчёт цены от этого значения
+  const area = Math.round(rawArea * 100) / 100;
   const tiers = pricing.tiersOpt[tierCategoryId(category)];
   const baseCoef = tierForQty(tiers, item.quantity).coef;
   const surcharge = areaSurchargeFor(area, pricing.areaSurcharge);
