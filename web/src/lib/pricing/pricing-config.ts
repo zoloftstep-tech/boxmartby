@@ -7,8 +7,18 @@
  * =============================================================================
  */
 
-export type BoxCategory = "fourFlap" | "selfLock";
+export type PricingTierCategory = "fourFlap" | "selfLock";
+export type BoxCategory = PricingTierCategory | "ourDies";
 export type MaterialId = "t22" | "t23" | "t24";
+
+export type OurDie = {
+  id: string;
+  name: string;
+  formulaTypeId: string;
+  A: number;
+  B: number;
+  H: number;
+};
 
 export type QtyTier = {
   id: string;
@@ -49,7 +59,7 @@ export const REFERENCE_MATERIAL: MaterialId = "t23";
  *    selfLock = самосборная (FEFCO 0409)
  *    qty < min первой ступени → берётся первая ступень (t50)
  * --------------------------------------------------------------------------- */
-export const QTY_TIERS_OPT: Record<BoxCategory, QtyTier[]> = {
+export const QTY_TIERS_OPT: Record<PricingTierCategory, QtyTier[]> = {
   fourFlap: [
     { id: "t50", min: 50, max: 99, coef: 2.1 },
     { id: "t100", min: 100, max: 299, coef: 2.07 },
@@ -65,6 +75,15 @@ export const QTY_TIERS_OPT: Record<BoxCategory, QtyTier[]> = {
     { id: "t1000", min: 1000, max: Infinity, coef: 2.7 },
   ],
 };
+
+/** FEFCO 02xx → четырёхклапанная геометрия; иначе самосборная (как в BoxCalc). */
+export const FOUR_FLAP_FORMULA_IDS = new Set([
+  "fefco_0201",
+  "fefco_0203",
+  "fefco_0215",
+  "fefco_0216",
+  "fefco_0217",
+]);
 
 /* -----------------------------------------------------------------------------
  * 3. AREA_SURCHARGE — надбавка к коэффициенту по площади заготовки (м²)
@@ -95,4 +114,5 @@ export const MIN_DIMS = {
 export const CATEGORY_LABELS: Record<BoxCategory, string> = {
   fourFlap: "Четырёхклапанная",
   selfLock: "Самосборная",
+  ourDies: "Наши штанцформы",
 };

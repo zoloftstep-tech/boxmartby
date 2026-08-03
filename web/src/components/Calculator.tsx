@@ -3,12 +3,13 @@
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
 import {
   calculateQuote,
+  fetchLiveCatalog,
   formatByn,
   formatPhoneMask,
   phoneToE164,
   submitOrder,
 } from "@/lib/api";
-import type { BoxCategory, CalcItemResult, CalcSummary, MaterialId } from "@/lib/types";
+import type { BoxCategory, CalcItemResult, CalcSummary, MaterialId, OurDie } from "@/lib/types";
 import { dimWarningsForItem, MIN_DIMS } from "@/lib/pricing";
 import { IconClose, IconPlus, IconTrash } from "./icons";
 
@@ -20,6 +21,7 @@ type DraftItem = {
   quantity: string;
   category: BoxCategory;
   material: MaterialId;
+  dieId: string;
 };
 
 function emptyItem(): DraftItem {
@@ -31,6 +33,18 @@ function emptyItem(): DraftItem {
     quantity: "100",
     category: "fourFlap",
     material: "t22",
+    dieId: "",
+  };
+}
+
+function applyDieDims(item: DraftItem, die: OurDie | undefined): DraftItem {
+  if (!die) return { ...item, dieId: "", length: "", width: "", height: "" };
+  return {
+    ...item,
+    dieId: die.id,
+    length: String(die.A),
+    width: String(die.B),
+    height: String(die.H),
   };
 }
 
@@ -42,10 +56,14 @@ function toPayload(items: DraftItem[]) {
     quantity: Number(item.quantity),
     category: item.category ?? "fourFlap",
     material: item.material ?? "t22",
+    dieId: item.category === "ourDies" && item.dieId ? item.dieId : undefined,
   }));
 }
 
 function isComplete(item: DraftItem) {
+  if (item.category === "ourDies") {
+    if (!item.dieId) return false;
+  }
   const vals = [item.length, item.width, item.height, item.quantity].map(Number);
   return vals.every((n) => Number.isFinite(n) && n > 0);
 }
@@ -58,6 +76,12 @@ function isSpecialRetailDims(length: string, width: string, height: string): boo
 
 const SPECIAL_RETAIL_NOTICE =
   "Это специальная розничная позиция. Пожалуйста, позвоните или напишите нам, и мы предложим вам наиболее актуальную и выгодную цену. Вы также можете оставить заявку через форму — менеджер уточнит условия.";
+
+const OUR_DIES_NOTICE =
+  "Нет нужного размера? Выберите «Самосборные», укажите параметры и оставьте заявку — менеджер согласует детали.";
+
+const SELF_LOCK_NOTICE =
+  "Этого формата нет в наличии. Выберите «Наши штанцформы» или оставьте заявку — менеджер согласует детали.";
 
 function draftDimWarnings(item: DraftItem): string[] {
   if (item.category !== "fourFlap" || !isComplete(item)) return [];
@@ -72,13 +96,10 @@ function draftDimWarnings(item: DraftItem): string[] {
   );
 }
 
-/** Временно в UI только Т-22; t23/t24 остаются в типах и pricing API. */
 const SELECTABLE_MATERIALS: { id: MaterialId; label: string }[] = [
   { id: "t22", label: "Т-22" },
-  // { id: "t23", label: "Т-23" },
-  // { id: "t24", label: "Т-24" },
+  { id: "t23", label: "Т-23" },
 ];
-
 
 export function Calculator() {
   const [items, setItems] = useState<DraftItem[]>([emptyItem()]);
@@ -87,7 +108,37 @@ export function Calculator() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [ourDies, setOurDies] = useState<OurDie[]>([]);
   const seq = useRef(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchLiveCatalog()
+      .then((data) => {
+        if (!cancelled) setOurDies(data.ourDies ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setOurDies([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Когда каталог подгрузился — заполнить выбранные ourDies без dieId
+  useEffect(() => {
+    if (!ourDies.length) return;
+    setItems((prev) =>
+      prev.map((item) => {
+        if (item.category !== "ourDies") return item;
+        if (item.dieId && ourDies.some((d) => d.id === item.dieId)) {
+          const die = ourDies.find((d) => d.id === item.dieId)!;
+          return applyDieDims(item, die);
+        }
+        return applyDieDims(item, ourDies[0]);
+      }),
+    );
+  }, [ourDies]);
 
   // HMR / старый state мог быть без category/material — дозаполняем; материал только из SELECTABLE
   useEffect(() => {
@@ -97,12 +148,14 @@ export function Calculator() {
         ...item,
         category: item.category ?? "fourFlap",
         material: allowed.has(item.material) ? item.material : "t22",
+        dieId: item.dieId ?? "",
       })),
     );
   }, []);
 
   const recalculate = useCallback(async (draft: DraftItem[]) => {
-    if (!draft.every(isComplete)) {
+    const hasEmptyDies = draft.some((item) => item.category === "ourDies" && !item.dieId);
+    if (hasEmptyDies || !draft.every(isComplete)) {
       setResults(null);
       setSummary(null);
       setError(null);
@@ -141,12 +194,27 @@ export function Calculator() {
     );
   }
 
-  function updateSelect(
-    id: string,
-    field: "category" | "material",
-    value: BoxCategory | MaterialId,
-  ) {
-    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
+  function updateCategory(id: string, category: BoxCategory) {
+    setItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        if (category === "ourDies") {
+          return applyDieDims({ ...item, category, dieId: "" }, ourDies[0]);
+        }
+        return { ...item, category, dieId: "" };
+      }),
+    );
+  }
+
+  function updateDie(id: string, dieId: string) {
+    const die = ourDies.find((d) => d.id === dieId);
+    setItems((prev) =>
+      prev.map((item) => (item.id === id ? applyDieDims({ ...item, category: "ourDies" }, die) : item)),
+    );
+  }
+
+  function updateMaterial(id: string, material: MaterialId) {
+    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, material } : item)));
   }
 
   function addItem() {
@@ -158,6 +226,7 @@ export function Calculator() {
   }
 
   const canOrder = Boolean(results && summary && !loading && !error);
+  const hasOurDiesWithoutCatalog = items.some((item) => item.category === "ourDies") && ourDies.length === 0;
 
   return (
     <section id="calculator" className="section-pad border-t border-line bg-surface py-20 md:py-28">
@@ -176,6 +245,7 @@ export function Calculator() {
         <div className="mt-10 space-y-4">
           {items.map((item, index) => {
             const result = results?.[index];
+            const dimsLocked = item.category === "ourDies";
             return (
               <article
                 key={item.id}
@@ -211,8 +281,16 @@ export function Calculator() {
                         type="text"
                         inputMode="numeric"
                         value={item[field]}
-                        onChange={(e) => updateNumeric(item.id, field, e.target.value)}
-                        className="focus-ring mt-1.5 w-full rounded-md border border-line bg-white px-3 py-2.5 text-sm text-ink"
+                        readOnly={dimsLocked}
+                        aria-readonly={dimsLocked}
+                        title={dimsLocked ? "Размеры заданы штанцформой" : undefined}
+                        onChange={(e) => {
+                          if (dimsLocked) return;
+                          updateNumeric(item.id, field, e.target.value);
+                        }}
+                        className={`focus-ring mt-1.5 w-full rounded-md border border-line px-3 py-2.5 text-sm text-ink ${
+                          dimsLocked ? "cursor-not-allowed bg-slate-50 text-ink-soft" : "bg-white"
+                        }`}
                         placeholder={placeholder}
                         autoComplete="off"
                       />
@@ -223,19 +301,42 @@ export function Calculator() {
                     Категория коробки
                     <select
                       value={item.category}
-                      onChange={(e) => updateSelect(item.id, "category", e.target.value as BoxCategory)}
+                      onChange={(e) => updateCategory(item.id, e.target.value as BoxCategory)}
                       className="focus-ring mt-1.5 w-full cursor-pointer rounded-md border border-line bg-white px-3 py-2.5 text-sm text-ink"
                     >
                       <option value="fourFlap">Четырёхклапанная</option>
                       <option value="selfLock">Самосборная</option>
+                      <option value="ourDies">Наши штанцформы</option>
                     </select>
                   </label>
+
+                  {item.category === "ourDies" && (
+                    <label className="block text-xs font-medium text-muted">
+                      Штанцформа
+                      <select
+                        value={item.dieId}
+                        onChange={(e) => updateDie(item.id, e.target.value)}
+                        disabled={ourDies.length === 0}
+                        className="focus-ring mt-1.5 w-full cursor-pointer rounded-md border border-line bg-white px-3 py-2.5 text-sm text-ink disabled:cursor-not-allowed disabled:bg-slate-50"
+                      >
+                        {ourDies.length === 0 ? (
+                          <option value="">Нет доступных штанцформ</option>
+                        ) : (
+                          ourDies.map((die) => (
+                            <option key={die.id} value={die.id}>
+                              {die.name} ({die.A}×{die.B}×{die.H})
+                            </option>
+                          ))
+                        )}
+                      </select>
+                    </label>
+                  )}
 
                   <label className="block text-xs font-medium text-muted">
                     Материал картона
                     <select
                       value={item.material}
-                      onChange={(e) => updateSelect(item.id, "material", e.target.value as MaterialId)}
+                      onChange={(e) => updateMaterial(item.id, e.target.value as MaterialId)}
                       className="focus-ring mt-1.5 w-full cursor-pointer rounded-md border border-line bg-white px-3 py-2.5 text-sm text-ink"
                     >
                       {SELECTABLE_MATERIALS.map((m) => (
@@ -298,6 +399,24 @@ export function Calculator() {
                   </p>
                 )}
 
+                {item.category === "ourDies" && (
+                  <p
+                    role="status"
+                    className="mt-4 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2.5 text-sm leading-relaxed text-amber-950"
+                  >
+                    {OUR_DIES_NOTICE}
+                  </p>
+                )}
+
+                {item.category === "selfLock" && (
+                  <p
+                    role="status"
+                    className="mt-4 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2.5 text-sm leading-relaxed text-amber-950"
+                  >
+                    {SELF_LOCK_NOTICE}
+                  </p>
+                )}
+
                 {draftDimWarnings(item).length > 0 && (
                   <p
                     role="status"
@@ -341,6 +460,9 @@ export function Calculator() {
                 </p>
               </div>
             </div>
+            {hasOurDiesWithoutCatalog && (
+              <p className="mt-2 text-sm text-amber-800">Штанцформы пока не добавлены</p>
+            )}
             {error && <p className="mt-2 text-sm text-red-700">{error}</p>}
           </div>
 

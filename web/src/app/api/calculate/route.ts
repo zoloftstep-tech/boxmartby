@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
       quantity: Number(raw.quantity),
       category: raw.category ?? "fourFlap",
       material: raw.material ?? "t22",
+      dieId: raw.dieId ? String(raw.dieId) : undefined,
     };
 
     const err = validateItem(item, pricing);

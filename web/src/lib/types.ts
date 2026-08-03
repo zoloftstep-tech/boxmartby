@@ -1,5 +1,14 @@
-export type BoxCategory = "fourFlap" | "selfLock";
+export type BoxCategory = "fourFlap" | "selfLock" | "ourDies";
 export type MaterialId = "t22" | "t23" | "t24";
+
+export type OurDie = {
+  id: string;
+  name: string;
+  formulaTypeId: string;
+  A: number;
+  B: number;
+  H: number;
+};
 
 export type CalcItemInput = {
   length: number;
@@ -8,6 +17,7 @@ export type CalcItemInput = {
   quantity: number;
   category: BoxCategory;
   material: MaterialId;
+  dieId?: string;
 };
 
 export type CalcItemResult = {

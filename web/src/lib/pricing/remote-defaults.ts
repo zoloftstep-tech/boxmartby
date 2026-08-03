@@ -6,8 +6,9 @@ import {
   REFERENCE_MATERIAL,
   VAT_PERCENT,
   type AreaSurchargeRule,
-  type BoxCategory,
   type MaterialId,
+  type OurDie,
+  type PricingTierCategory,
   type QtyTier,
 } from "./pricing-config";
 
@@ -17,12 +18,13 @@ export type LivePricingConfig = {
   minW: number;
   minWH: number;
   areaSurcharge: AreaSurchargeRule[];
-  tiersOpt: Record<BoxCategory, QtyTier[]>;
+  tiersOpt: Record<PricingTierCategory, QtyTier[]>;
   materials: Record<
     MaterialId,
     { label: string; costPerSqM: number; isReference?: boolean }
   >;
   referenceMaterial: MaterialId;
+  ourDies: OurDie[];
 };
 
 export function localPricingConfig(): LivePricingConfig {
@@ -35,6 +37,7 @@ export function localPricingConfig(): LivePricingConfig {
     tiersOpt: QTY_TIERS_OPT,
     materials: MATERIAL_PRICES,
     referenceMaterial: REFERENCE_MATERIAL,
+    ourDies: [],
   };
 }
 
@@ -44,21 +47,48 @@ type RemoteDefaults = {
   minW?: number;
   minWH?: number;
   areaSurcharge?: AreaSurchargeRule[];
-  tiers?: { opt?: Record<string, Array<{ id: string; min: number; max: number | null; coef: number; label?: string }>> };
+  tiers?: {
+    opt?: Record<
+      string,
+      Array<{ id: string; min: number; max: number | null; coef: number; label?: string }>
+    >;
+  };
   cardTypes?: Array<{
     id: string;
     label: string;
     costPerSqM: number;
     isReference?: boolean;
   }>;
+  ourDies?: Array<{
+    id?: string;
+    name?: string;
+    formulaTypeId?: string;
+    A?: number;
+    B?: number;
+    H?: number;
+  }>;
 };
+
+function normalizeOurDies(raw: RemoteDefaults["ourDies"]): OurDie[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((d) => ({
+      id: String(d?.id ?? ""),
+      name: String(d?.name || "Штанцформа"),
+      formulaTypeId: String(d?.formulaTypeId || "fefco_0409"),
+      A: Math.max(1, Math.round(Number(d?.A) || 1)),
+      B: Math.max(1, Math.round(Number(d?.B) || 1)),
+      H: Math.max(1, Math.round(Number(d?.H) || 1)),
+    }))
+    .filter((d) => d.id);
+}
 
 function normalizeTiers(
   remote: RemoteDefaults["tiers"],
-): Record<BoxCategory, QtyTier[]> {
+): Record<PricingTierCategory, QtyTier[]> {
   const base = structuredClone(QTY_TIERS_OPT);
   if (!remote?.opt) return base;
-  for (const cat of ["fourFlap", "selfLock"] as BoxCategory[]) {
+  for (const cat of ["fourFlap", "selfLock"] as PricingTierCategory[]) {
     const rows = remote.opt[cat];
     if (!Array.isArray(rows) || !rows.length) continue;
     base[cat] = rows.map((t) => ({
@@ -96,6 +126,7 @@ export function pricingFromRemote(data: RemoteDefaults): LivePricingConfig {
     tiersOpt: normalizeTiers(data.tiers),
     materials,
     referenceMaterial,
+    ourDies: normalizeOurDies(data.ourDies),
   };
 }
 

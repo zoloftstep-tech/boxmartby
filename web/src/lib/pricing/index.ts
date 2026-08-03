@@ -1,6 +1,7 @@
 export {
   AREA_SURCHARGE,
   CATEGORY_LABELS,
+  FOUR_FLAP_FORMULA_IDS,
   MATERIAL_PRICES,
   MIN_DIMS,
   QTY_TIERS_OPT,
@@ -8,6 +9,8 @@ export {
   VAT_PERCENT,
   type BoxCategory,
   type MaterialId,
+  type OurDie,
+  type PricingTierCategory,
 } from "./pricing-config";
 
 export {
@@ -16,6 +19,10 @@ export {
   calculateItem,
   calculateItems,
   dimWarningsForItem,
+  findDie,
+  formulaCategoryForDie,
+  resolveItemDims,
+  tierCategoryId,
   tierForQty,
   validateItem,
 } from "./calculate";

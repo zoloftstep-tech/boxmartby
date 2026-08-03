@@ -1,4 +1,4 @@
-import type { CalcItemInput, CalcResponse, OrderRequest, OrderResponse } from "./types";
+import type { CalcItemInput, CalcResponse, OrderRequest, OrderResponse, OurDie } from "./types";
 
 export async function calculateQuote(items: CalcItemInput[]): Promise<CalcResponse> {
   const res = await fetch("/api/calculate", {
@@ -13,6 +13,14 @@ export async function calculateQuote(items: CalcItemInput[]): Promise<CalcRespon
   }
 
   return res.json() as Promise<CalcResponse>;
+}
+
+export async function fetchLiveCatalog(): Promise<{ ourDies: OurDie[] }> {
+  const res = await fetch("/api/live-catalog", { cache: "no-store" });
+  if (!res.ok) {
+    throw new Error("Не удалось загрузить каталог штанцформ");
+  }
+  return res.json() as Promise<{ ourDies: OurDie[] }>;
 }
 
 export async function submitOrder(payload: OrderRequest): Promise<OrderResponse> {
