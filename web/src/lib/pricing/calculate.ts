@@ -63,20 +63,37 @@ export function validateItem(item: PricingInput, pricing: LivePricingConfig = lo
     }
   }
 
-  if (A < pricing.minL) {
-    return `Длина (A) не менее ${pricing.minL} мм`;
-  }
-  if (B < pricing.minW) {
-    return `Ширина (B) не менее ${pricing.minW} мм`;
-  }
-  if (B + H < pricing.minWH) {
-    return `Сумма ширины и высоты (B+H) не менее ${pricing.minWH} мм`;
-  }
+  // minL / minW / minWH — не блокируют расчёт (как в BoxCalc):
+  // fourFlap → предупреждение на клиенте; selfLock → пороги не применяются.
+
   if (!Number.isInteger(quantity) || quantity < 1 || quantity > 100000) {
     return "quantity: целое число 1–100000";
   }
 
   return null;
+}
+
+/** Предупреждения по порогам размеров — только четырёхклапанные, без блокировки. */
+export function dimWarningsForItem(
+  item: Pick<PricingInput, "length" | "width" | "height" | "category">,
+  mins: { minL: number; minW: number; minWH: number } = {
+    minL: 240,
+    minW: 80,
+    minWH: 280,
+  },
+): string[] {
+  if (item.category !== "fourFlap") return [];
+  const A = item.length;
+  const B = item.width;
+  const H = item.height;
+  if (![A, B, H].every((n) => Number.isFinite(n) && n > 0)) return [];
+  const warn: string[] = [];
+  if (A < mins.minL) warn.push(`Длина меньше рекомендуемого минимума ${mins.minL} мм`);
+  if (B < mins.minW) warn.push(`Ширина меньше рекомендуемого минимума ${mins.minW} мм`);
+  if (B + H < mins.minWH) {
+    warn.push(`Сумма ширины и высоты меньше рекомендуемого минимума ${mins.minWH} мм (сейчас ${B + H})`);
+  }
+  return warn;
 }
 
 /**

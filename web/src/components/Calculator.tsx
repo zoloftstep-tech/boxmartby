@@ -9,6 +9,7 @@ import {
   submitOrder,
 } from "@/lib/api";
 import type { BoxCategory, CalcItemResult, CalcSummary, MaterialId } from "@/lib/types";
+import { dimWarningsForItem, MIN_DIMS } from "@/lib/pricing";
 import { IconClose, IconPlus, IconTrash } from "./icons";
 
 type DraftItem = {
@@ -57,6 +58,19 @@ function isSpecialRetailDims(length: string, width: string, height: string): boo
 
 const SPECIAL_RETAIL_NOTICE =
   "Это специальная розничная позиция. Пожалуйста, позвоните или напишите нам, и мы предложим вам наиболее актуальную и выгодную цену. Вы также можете оставить заявку через форму — менеджер уточнит условия.";
+
+function draftDimWarnings(item: DraftItem): string[] {
+  if (item.category !== "fourFlap" || !isComplete(item)) return [];
+  return dimWarningsForItem(
+    {
+      length: Number(item.length),
+      width: Number(item.width),
+      height: Number(item.height),
+      category: item.category,
+    },
+    MIN_DIMS,
+  );
+}
 
 /** Временно в UI только Т-22; t23/t24 остаются в типах и pricing API. */
 const SELECTABLE_MATERIALS: { id: MaterialId; label: string }[] = [
@@ -281,6 +295,19 @@ export function Calculator() {
                     className="mt-4 rounded-md border border-kraft/30 bg-kraft-soft/50 px-3 py-2.5 text-sm leading-relaxed text-kraft-dark"
                   >
                     {SPECIAL_RETAIL_NOTICE}
+                  </p>
+                )}
+
+                {draftDimWarnings(item).length > 0 && (
+                  <p
+                    role="status"
+                    className="mt-4 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2.5 text-sm leading-relaxed text-amber-950"
+                  >
+                    {draftDimWarnings(item).map((w) => (
+                      <span key={w} className="block">
+                        ⚠ {w}
+                      </span>
+                    ))}
                   </p>
                 )}
               </article>

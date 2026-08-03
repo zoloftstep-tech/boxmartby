@@ -15,6 +15,7 @@ export {
   blankArea,
   calculateItem,
   calculateItems,
+  dimWarningsForItem,
   tierForQty,
   validateItem,
 } from "./calculate";
