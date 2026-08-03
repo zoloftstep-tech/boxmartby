@@ -76,15 +76,6 @@ export const QTY_TIERS_OPT: Record<PricingTierCategory, QtyTier[]> = {
   ],
 };
 
-/** FEFCO 02xx → четырёхклапанная геометрия; иначе самосборная (как в BoxCalc). */
-export const FOUR_FLAP_FORMULA_IDS = new Set([
-  "fefco_0201",
-  "fefco_0203",
-  "fefco_0215",
-  "fefco_0216",
-  "fefco_0217",
-]);
-
 /* -----------------------------------------------------------------------------
  * 3. AREA_SURCHARGE — надбавка к коэффициенту по площади заготовки (м²)
  *    По умолчанию все правила выключены (как в приложении).

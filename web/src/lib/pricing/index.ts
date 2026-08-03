@@ -1,7 +1,6 @@
 export {
   AREA_SURCHARGE,
   CATEGORY_LABELS,
-  FOUR_FLAP_FORMULA_IDS,
   MATERIAL_PRICES,
   MIN_DIMS,
   QTY_TIERS_OPT,
@@ -13,6 +12,8 @@ export {
   type PricingTierCategory,
 } from "./pricing-config";
 
+export { blankAreaForFormula, resolveFefcoFormula } from "./fefco-formulas";
+
 export {
   areaSurchargeFor,
   blankArea,
@@ -20,7 +21,6 @@ export {
   calculateItems,
   dimWarningsForItem,
   findDie,
-  formulaCategoryForDie,
   resolveItemDims,
   tierCategoryId,
   tierForQty,

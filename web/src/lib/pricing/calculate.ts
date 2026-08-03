@@ -2,7 +2,6 @@ import type { CalcItemInput, CalcItemResult, CalcResponse } from "@/lib/types";
 import {
   AREA_SURCHARGE,
   CATEGORY_LABELS,
-  FOUR_FLAP_FORMULA_IDS,
   type AreaSurchargeRule,
   type BoxCategory,
   type MaterialId,
@@ -10,29 +9,22 @@ import {
   type PricingTierCategory,
   type QtyTier,
 } from "./pricing-config";
+import { blankAreaForFormula } from "./fefco-formulas";
 import { localPricingConfig, type LivePricingConfig } from "./remote-defaults";
 
 export type PricingInput = CalcItemInput;
 
 function blankAreaFourFlap(A: number, B: number, H: number): number {
-  const L = 66 + 2 * A + 2 * B;
-  const W = B + 8 + H;
-  return (L / 1000) * (W / 1000);
+  return blankAreaForFormula("fefco_0201", A, B, H);
 }
 
 function blankAreaSelfLock(A: number, B: number, H: number): number {
-  const L = A + 2 * H + 6;
-  const W = 2 * B + 3 * H + 12;
-  return (L / 1000) * (W / 1000);
+  return blankAreaForFormula("fefco_0409", A, B, H);
 }
 
 /** ourDies берёт коэффициенты самосборных. */
 export function tierCategoryId(category: BoxCategory): PricingTierCategory {
   return category === "ourDies" ? "selfLock" : category;
-}
-
-export function formulaCategoryForDie(formulaTypeId: string): PricingTierCategory {
-  return FOUR_FLAP_FORMULA_IDS.has(formulaTypeId) ? "fourFlap" : "selfLock";
 }
 
 export function blankArea(
@@ -43,8 +35,7 @@ export function blankArea(
   formulaTypeId?: string,
 ): number {
   if (category === "ourDies") {
-    const geom = formulaCategoryForDie(formulaTypeId || "fefco_0409");
-    return geom === "fourFlap" ? blankAreaFourFlap(A, B, H) : blankAreaSelfLock(A, B, H);
+    return blankAreaForFormula(formulaTypeId || "fefco_0409", A, B, H);
   }
   return category === "fourFlap" ? blankAreaFourFlap(A, B, H) : blankAreaSelfLock(A, B, H);
 }
