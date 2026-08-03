@@ -41,132 +41,13 @@
   }
 }
 
-/* Hero SVG box: soft blank → closed iso assemble → continuous yaw */
-.hero-box {
-  perspective: 900px;
-  transform-style: preserve-3d;
-}
-
-.hero-box-scene {
-  transform-style: preserve-3d;
-  transform: rotateX(8deg);
-  will-change: transform;
-}
-
-.hero-box-blank,
-.hero-box-iso,
-.hero-box-face,
-.hero-box-shadow {
-  transform-box: fill-box;
-  transform-origin: center;
-  transition:
-    opacity 0.65s cubic-bezier(0.33, 1, 0.32, 1),
-    transform 0.95s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.hero-box-blank {
-  opacity: 1;
-  transform: scale(1) translateY(0);
-}
-
-.hero-box-iso {
-  opacity: 0;
-}
-
-.hero-box-face-left {
-  transform: translate(-48px, 28px) scale(0.72) rotate(-8deg);
-  opacity: 0;
-}
-
-.hero-box-face-right {
-  transform: translate(48px, 28px) scale(0.72) rotate(8deg);
-  opacity: 0;
-}
-
-.hero-box-face-top {
-  transform: translateY(-36px) scale(0.85);
-  opacity: 0;
-}
-
-.hero-box-shadow {
-  opacity: 0.35;
-  transform: scaleX(0.7);
-}
-
-.hero-box.is-assembled .hero-box-blank {
-  opacity: 0;
-  transform: scale(0.88) translateY(12px);
-  transition-duration: 0.5s;
-  pointer-events: none;
-}
-
-.hero-box.is-assembled .hero-box-iso {
-  opacity: 1;
-  transition-delay: 0.15s;
-}
-
-.hero-box.is-assembled .hero-box-face-left,
-.hero-box.is-assembled .hero-box-face-right,
-.hero-box.is-assembled .hero-box-face-top {
-  opacity: 1;
-  transform: none;
-}
-
-.hero-box.is-assembled .hero-box-face-left {
-  transition-delay: 0.2s;
-}
-
-.hero-box.is-assembled .hero-box-face-right {
-  transition-delay: 0.35s;
-}
-
-.hero-box.is-assembled .hero-box-face-top {
-  transition-delay: 0.5s;
-}
-
-.hero-box.is-assembled .hero-box-shadow {
-  opacity: 1;
-  transform: scaleX(1);
-  transition-delay: 0.4s;
-}
-
-.hero-box.is-assembled.is-spinning .hero-box-scene {
-  animation: hero-box-spin 16s linear infinite;
-}
-
-@keyframes hero-box-spin {
-  from {
-    transform: rotateX(8deg) rotateY(0deg);
+@keyframes float-soft {
+  0%,
+  100% {
+    transform: translateY(0);
   }
-  to {
-    transform: rotateX(8deg) rotateY(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .hero-box-blank,
-  .hero-box-iso,
-  .hero-box-face,
-  .hero-box-shadow {
-    transition: none !important;
-  }
-
-  .hero-box .hero-box-blank {
-    opacity: 0;
-  }
-
-  .hero-box .hero-box-iso,
-  .hero-box .hero-box-face-left,
-  .hero-box .hero-box-face-right,
-  .hero-box .hero-box-face-top,
-  .hero-box .hero-box-shadow {
-    opacity: 1;
-    transform: none;
-  }
-
-  .hero-box .hero-box-scene {
-    animation: none !important;
-    transform: rotateX(8deg);
+  50% {
+    transform: translateY(-16px);
   }
 }
 

@@ -1,136 +1,90 @@
-"use client";
-
-import { useEffect, useState } from "react";
-
-type IsometricBoxProps = {
-  className?: string;
-};
-
-/**
- * Soft SVG assemble (flat blank → closed isometric box), then continuous yaw.
- * No dimension labels. Honors prefers-reduced-motion.
- */
-export function IsometricBox({ className = "" }: IsometricBoxProps) {
-  const [assembled, setAssembled] = useState(false);
-  const [spinning, setSpinning] = useState(false);
-  const [reduceMotion, setReduceMotion] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-
-    const sync = () => {
-      if (mq.matches) {
-        setReduceMotion(true);
-        setAssembled(true);
-        setSpinning(false);
-        return null;
-      }
-      setReduceMotion(false);
-      return window.setTimeout(() => setAssembled(true), 80);
-    };
-
-    let timer = sync();
-    const onChange = () => {
-      if (timer != null) window.clearTimeout(timer);
-      timer = sync();
-    };
-    mq.addEventListener("change", onChange);
-    return () => {
-      if (timer != null) window.clearTimeout(timer);
-      mq.removeEventListener("change", onChange);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!assembled || reduceMotion) return;
-    const id = window.setTimeout(() => setSpinning(true), 3000);
-    return () => window.clearTimeout(id);
-  }, [assembled, reduceMotion]);
-
+/** Isometric cardboard box — closed lid, face labels, no photos */
+export function IsometricBox({ className = "" }: { className?: string }) {
   return (
-    <div
-      className={`hero-box ${assembled ? "is-assembled" : ""} ${spinning ? "is-spinning" : ""} ${className}`}
+    <svg
+      className={className}
+      viewBox="0 0 420 360"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
       aria-hidden
     >
-      <div className="hero-box-scene">
-        <svg
-          className="h-auto w-full"
-          viewBox="0 0 420 340"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <defs>
-            <linearGradient id="hbTop" x1="210" y1="50" x2="210" y2="150" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#EDE0C8" />
-              <stop offset="1" stopColor="#D4BC8E" />
-            </linearGradient>
-            <linearGradient id="hbLeft" x1="90" y1="120" x2="200" y2="280" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#C4A574" />
-              <stop offset="1" stopColor="#9A7348" />
-            </linearGradient>
-            <linearGradient id="hbRight" x1="230" y1="120" x2="340" y2="280" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#A67C52" />
-              <stop offset="1" stopColor="#6B4F2E" />
-            </linearGradient>
-            <pattern id="hbFlute" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
-              <path d="M0 0h2v8H0z" fill="rgba(107,79,46,0.12)" />
-            </pattern>
-          </defs>
+      <defs>
+        <linearGradient id="faceTop" x1="210" y1="40" x2="210" y2="140" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#E8D5B5" />
+          <stop offset="1" stopColor="#C9A87A" />
+        </linearGradient>
+        <linearGradient id="faceLeft" x1="80" y1="120" x2="180" y2="280" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#B8956A" />
+          <stop offset="1" stopColor="#8F6F45" />
+        </linearGradient>
+        <linearGradient id="faceRight" x1="240" y1="120" x2="340" y2="280" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#A67C52" />
+          <stop offset="1" stopColor="#6B4F2E" />
+        </linearGradient>
+        <pattern id="flute" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
+          <path d="M0 0h2v8H0z" fill="rgba(107,79,46,0.12)" />
+        </pattern>
+      </defs>
 
-          <ellipse
-            className="hero-box-shadow"
-            cx="210"
-            cy="308"
-            rx="118"
-            ry="15"
-            fill="rgba(15,23,42,0.09)"
-          />
+      {/* soft ground shadow */}
+      <ellipse cx="210" cy="318" rx="130" ry="18" fill="rgba(15,23,42,0.08)" />
 
-          {/* flat blank */}
-          <g className="hero-box-blank">
-            <rect x="86" y="108" width="248" height="112" rx="2" fill="#E8D5B5" stroke="#6B4F2E" strokeWidth="1.4" />
-            <path d="M148 108 V220 M210 108 V220 M272 108 V220" stroke="#9A7348" strokeWidth="1.1" />
-            <path
-              d="M86 136 H334 M86 192 H334"
-              stroke="#6B4F2E"
-              strokeWidth="1"
-              strokeDasharray="5 4"
-              opacity="0.5"
-            />
-            <path d="M86 108 H68 V220 H86" fill="#D4BC8E" stroke="#6B4F2E" strokeWidth="1.2" />
-          </g>
+      {/* left face — Ш */}
+      <path d="M210 140 L90 90 L90 230 L210 300 Z" fill="url(#faceLeft)" />
+      <path d="M210 140 L90 90 L90 230 L210 300 Z" fill="url(#flute)" />
 
-          {/* assembled closed box — proportions L > W ≈ H */}
-          <g className="hero-box-iso">
-            <g className="hero-box-face hero-box-face-left">
-              {/* length×height face */}
-              <path d="M210 148 L95 100 L95 248 L210 308 Z" fill="url(#hbLeft)" />
-              <path d="M210 148 L95 100 L95 248 L210 308 Z" fill="url(#hbFlute)" />
-            </g>
-            <g className="hero-box-face hero-box-face-right">
-              {/* width×height face — slightly shorter depth than length */}
-              <path d="M210 148 L310 108 L310 248 L210 308 Z" fill="url(#hbRight)" />
-              <path d="M210 148 L310 108 L310 248 L210 308 Z" fill="url(#hbFlute)" opacity="0.45" />
-            </g>
-            <g className="hero-box-face hero-box-face-top">
-              {/* closed top with flap creases */}
-              <path d="M210 148 L95 100 L210 52 L310 108 Z" fill="url(#hbTop)" stroke="#6B4F2E" strokeWidth="1" />
-              {/* major flaps meet on length midline */}
-              <path
-                d="M152 124 L210 148 L268 128"
-                stroke="#6B4F2E"
-                strokeWidth="1"
-                strokeDasharray="4 3"
-                opacity="0.4"
-              />
-              <path d="M210 100 L210 148" stroke="#6B4F2E" strokeWidth="1" opacity="0.35" />
-              <path d="M95 100 L210 148 L310 108" stroke="#6B4F2E" strokeWidth="1.1" opacity="0.35" />
-            </g>
-            <path d="M210 148 L210 308" stroke="#6B4F2E" strokeWidth="1.3" opacity="0.35" />
-          </g>
-        </svg>
-      </div>
-    </div>
+      {/* right face — Д */}
+      <path d="M210 140 L330 90 L330 230 L210 300 Z" fill="url(#faceRight)" />
+      <path d="M210 140 L330 90 L330 230 L210 300 Z" fill="url(#flute)" opacity="0.5" />
+
+      {/* closed top */}
+      <path d="M210 140 L90 90 L210 40 L330 90 Z" fill="url(#faceTop)" />
+
+      {/* rim + front edge */}
+      <path d="M210 140 L210 300" stroke="#6B4F2E" strokeWidth="1.5" opacity="0.45" />
+      <path d="M90 90 L210 140 L330 90" stroke="#6B4F2E" strokeWidth="1.2" opacity="0.35" />
+
+      {/* single flap crease, center of lid, parallel to Д */}
+      <path
+        d="M150 115 L270 65"
+        stroke="#6B4F2E"
+        strokeWidth="1.15"
+        strokeDasharray="5 4"
+        opacity="0.45"
+      />
+
+      {/* face labels */}
+      <text
+        x="198"
+        y="236"
+        fill="#6B4F2E"
+        fontSize="13"
+        fontWeight="600"
+        fontFamily="ui-sans-serif, system-ui"
+      >
+        В
+      </text>
+      <text
+        x="128"
+        y="290"
+        fill="#6B4F2E"
+        fontSize="13"
+        fontWeight="600"
+        fontFamily="ui-sans-serif, system-ui"
+      >
+        Ш
+      </text>
+      <text
+        x="278"
+        y="290"
+        fill="#6B4F2E"
+        fontSize="13"
+        fontWeight="600"
+        fontFamily="ui-sans-serif, system-ui"
+      >
+        Д
+      </text>
+    </svg>
   );
 }
 
