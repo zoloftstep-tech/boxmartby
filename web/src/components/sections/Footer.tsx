@@ -93,11 +93,29 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="container-site flex flex-col gap-2 border-t border-white/10 py-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+        <div className="container-site flex flex-col gap-3 border-t border-white/10 py-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <p>© {new Date().getFullYear()} ООО «БОКСМАРТ». Все права защищены.</p>
-          <a href="#calculator" className="focus-ring cursor-pointer text-slate-400 hover:text-white">
-            Рассчитать стоимость →
-          </a>
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-x-4 sm:gap-y-1">
+            <a
+              href="/docs/personal-data-terms.docx"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="focus-ring cursor-pointer text-slate-400 hover:text-white"
+            >
+              Условия обработки персональных данных
+            </a>
+            <a
+              href="/docs/personal-data-policy.doc"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="focus-ring cursor-pointer text-slate-400 hover:text-white"
+            >
+              Положение о политике в отношении обработки персональных
+            </a>
+            <a href="#calculator" className="focus-ring cursor-pointer text-slate-400 hover:text-white">
+              Рассчитать стоимость →
+            </a>
+          </div>
         </div>
       </div>
     </footer>
