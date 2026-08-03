@@ -2,7 +2,7 @@ import { IsometricBox } from "../visuals/IsometricBox";
 
 const STATS = [
   { value: "FEFCO", label: "стандарты конструкций" },
-  { value: "Т-23 / Т-24", label: "марки гофрокартона" },
+  { value: "Т-22 / Т-23", label: "марки гофрокартона" },
   { value: "от 1 дня", label: "типовые тиражи" },
 ];
 
