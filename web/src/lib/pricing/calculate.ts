@@ -133,7 +133,7 @@ export function dimWarningsForItem(
 
 /**
  * unitNet = area × (baseCoef + areaSurcharge) + area × (cardCost − refCost)
- * совпадает с calculateResult() в boxcalculator (discount = 0, mode = opt)
+ * Matches BoxCalc calculateResult() (discount = 0, mode = opt); full-precision area.
  */
 export function calculateItem(
   item: PricingInput,
@@ -144,8 +144,8 @@ export function calculateItem(
   const material = item.material as MaterialId;
 
   const rawArea = blankArea(category, A, B, H, die?.formulaTypeId);
-  // Округление до сотых: и показ, и расчёт цены от этого значения
-  const area = Math.round(rawArea * 100) / 100;
+  // Full precision for price (matches BoxCalc SPA); UI may round for display.
+  const area = rawArea;
   const tiers = pricing.tiersOpt[tierCategoryId(category)];
   const baseCoef = tierForQty(tiers, item.quantity).coef;
   const surcharge = areaSurchargeFor(area, pricing.areaSurcharge);

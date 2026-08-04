@@ -28,6 +28,18 @@
 - `GMAIL_APP_PASSWORD`
 - `PERPLEXITY_API_KEY`
 - `ALLOWED_ORIGIN` — URL сайта на Vercel, например `https://your-project.vercel.app` (без слэша в конце)
+- `CALCULATOR_DEFAULTS_URL` — `https://YOUR-CALC-HOST/api/defaults` (BoxCalc)
+- `CALCULATOR_DEFAULTS_API_KEY` — тот же секрет, что `DEFAULTS_API_KEY` у BoxCalc
+- `CALCULATOR_CALCULATE_URL` — опционально; иначе сайт дергает `{host}/api/calculate` из defaults URL
+
+Сайт проксирует `POST /api/calculate` на BoxCalc (единая формула). Каталог штанцформ — `GET /api/live-catalog` → org `ourDies`. Без env — fallback на локальный `pricing-config.ts` (`ourDies: []`).
+
+Проверка после деплоя:
+
+```bash
+curl -s -H "Authorization: Bearer $KEY" "$CALCULATOR_DEFAULTS_URL" | jq '.ourDies | length'
+curl -s -D- -X POST https://YOUR-SITE/api/live-catalog -o /dev/null | grep -i X-Pricing-Source
+```
 
 Локальный `.env.local` на Vercel не попадает.
 
