@@ -1,15 +1,55 @@
+import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import {
   buildMessageText,
   isAllowedOrigin,
   sendEmailNotification,
-  sendTelegramMessage,
 } from "@/lib/notifications";
 import type { OrderRequest, OrderResponse } from "@/lib/types";
 
+type CrmIngestResponse = {
+  status?: string;
+  order_id?: string;
+  duplicate?: boolean;
+  ok?: boolean;
+  error?: string;
+};
+
+async function ingestToCrm(order: OrderRequest, idempotencyKey: string): Promise<string> {
+  const crmUrl =
+    process.env.CRM_INGEST_URL?.trim() ||
+    "https://boxmart-crm.vercel.app/api/ingest/site";
+  const secret = process.env.INGEST_SITE_SECRET?.trim();
+  if (!secret) {
+    throw new Error("INGEST_SITE_SECRET не задан");
+  }
+
+  const response = await fetch(crmUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${secret}`,
+      "Idempotency-Key": idempotencyKey,
+    },
+    body: JSON.stringify(order),
+  });
+
+  const data = (await response.json().catch(() => null)) as CrmIngestResponse | null;
+  if (!response.ok) {
+    const detail = data?.error || response.statusText || "CRM ingest failed";
+    throw new Error(detail);
+  }
+
+  const orderId = data?.order_id;
+  if (!orderId) {
+    throw new Error("CRM не вернул order_id");
+  }
+  return orderId;
+}
+
 /**
- * Приём заявки + прямые уведомления (Вариант А):
- * Telegram Bot API + Gmail SMTP (nodemailer), без n8n.
+ * Приём заявки: CRM ingest (source of truth) + email-уведомление.
+ * Telegram notify отправляет CRM после ingest.
  */
 export async function POST(req: NextRequest) {
   const origin = req.headers.get("origin");
@@ -34,24 +74,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Отсутствует состав заказа" }, { status: 400 });
   }
 
-  const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-  const order_id = `BM-${stamp}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
+  const idempotencyKey =
+    req.headers.get("idempotency-key")?.trim() || `site:${randomUUID()}`;
+
+  let order_id: string;
+  try {
+    order_id = await ingestToCrm(order, idempotencyKey);
+  } catch (err) {
+    console.error("[submit-order] CRM ingest failed:", err);
+    return NextResponse.json(
+      { error: "Не удалось создать заказ в CRM" },
+      { status: 502 },
+    );
+  }
+
   const messageText = buildMessageText(order, order_id);
 
-  const results = await Promise.allSettled([
-    sendTelegramMessage(messageText, order_id),
-    sendEmailNotification(messageText, order),
-  ]);
-
-  if (results[0].status === "rejected") {
-    console.error("[submit-order] Telegram failed:", results[0].reason);
-  }
-  if (results[1].status === "rejected") {
-    console.error("[submit-order] Email failed:", results[1].reason);
-  }
-
-  if (results[0].status === "rejected" && results[1].status === "rejected") {
-    return NextResponse.json({ error: "Failed to deliver notification" }, { status: 500 });
+  try {
+    await sendEmailNotification(messageText, order);
+  } catch (err) {
+    console.error("[submit-order] Email failed:", err);
+    // Заказ уже в CRM — не откатываем из-за почты.
   }
 
   const response: OrderResponse = { status: "ok", order_id };

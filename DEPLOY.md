@@ -28,6 +28,9 @@
 - `GMAIL_APP_PASSWORD`
 - `PERPLEXITY_API_KEY`
 - `ALLOWED_ORIGIN` — URL сайта на Vercel, например `https://your-project.vercel.app` (без слэша в конце)
+- **CRM ingest (cutover):**
+  - `CRM_INGEST_URL` — `https://boxmart-crm.vercel.app/api/ingest/site`
+  - `INGEST_SITE_SECRET` — тот же секрет, что на CRM (`INGEST_SITE_SECRET`)
 - `CALCULATOR_DEFAULTS_URL` — `https://YOUR-CALC-HOST/api/defaults` (BoxCalc)
 - `CALCULATOR_DEFAULTS_API_KEY` — тот же секрет, что `DEFAULTS_API_KEY` у BoxCalc
 - `CALCULATOR_CALCULATE_URL` — опционально; иначе сайт дергает `{host}/api/calculate` из defaults URL
@@ -78,5 +81,18 @@ curl "https://api.telegram.org/bot$TOKEN/setWebhook" \
 Проверка: `curl "https://api.telegram.org/bot$TOKEN/getWebhookInfo"`.
 
 Парсер получает сообщения в группе «Оптопак», публикует карточки с inline-кнопками статусов в `TELEGRAM_CHAT_ID` и обрабатывает reply-уточнения.
+
+**Cutover на CRM:** переключите webhook парсера на CRM (статусы только в CRM, без inline-кнопок):
+
+```bash
+export TOKEN="…"          # TELEGRAM_PARSER_BOT_TOKEN (тот же бот)
+export SECRET="…"         # TELEGRAM_PARSER_WEBHOOK_SECRET с CRM
+
+curl "https://api.telegram.org/bot$TOKEN/setWebhook" \
+  -d "url=https://boxmart-crm.vercel.app/api/telegram/optopak" \
+  -d "secret_token=$SECRET"
+```
+
+Откат: вернуть `url=https://boxmartby.vercel.app/api/optopak-webhook`.
 
 Инструкция для менеджеров (закреп / `/help`): [`web/docs/optopak-manager-guide.md`](web/docs/optopak-manager-guide.md).
