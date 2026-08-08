@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
 import { Manrope, Plus_Jakarta_Sans } from "next/font/google";
+import {
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_TITLE,
+  SITE_URL,
+} from "@/lib/site";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -17,9 +23,48 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "БОКСМАРТ — производство картонных коробок в Минске",
-  description:
-    "Гофрокартонные коробки любых размеров напрямую от производителя. Расчёт онлайн для бизнеса и селлеров Wildberries и Ozon.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: SITE_TITLE,
+    template: `%s — ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  keywords: [
+    "картонные коробки",
+    "гофротара",
+    "гофрокартон Минск",
+    "коробки для Wildberries",
+    "коробки для Ozon",
+    "производство упаковки",
+    "БОКСМАРТ",
+  ],
+  authors: [{ name: "ООО «БОКСМАРТ»" }],
+  creator: "ООО «БОКСМАРТ»",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "ru_BY",
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  icons: {
+    icon: [{ url: "/logo-mark.png", type: "image/png" }],
+    apple: [{ url: "/logo-mark.png", type: "image/png" }],
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

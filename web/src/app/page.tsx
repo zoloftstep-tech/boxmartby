@@ -6,10 +6,12 @@ import { Sellers } from "@/components/sections/Sellers";
 import { Calculator } from "@/components/Calculator";
 import { Faq } from "@/components/sections/Faq";
 import { Footer } from "@/components/sections/Footer";
+import { JsonLd } from "@/components/JsonLd";
 
 export default function HomePage() {
   return (
     <>
+      <JsonLd />
       <Header />
       <main>
         <Hero />

@@ -34,7 +34,7 @@ export function Header() {
           <a href="#top" className="focus-ring group flex min-w-0 flex-1 cursor-pointer items-center gap-2 sm:gap-3">
             <Image
               src="/logo-mark.png"
-              alt=""
+              alt="БОКСМАРТ — логотип"
               width={40}
               height={40}
               className="h-9 w-9 shrink-0 object-contain sm:h-10 sm:w-10"

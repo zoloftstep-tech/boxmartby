@@ -10,7 +10,7 @@ export function Footer() {
             <div className="flex items-start gap-3">
               <Image
                 src="/logo-mark.png"
-                alt=""
+                alt="БОКСМАРТ — логотип"
                 width={44}
                 height={44}
                 className="mt-0.5 h-11 w-11 shrink-0 object-contain brightness-0 invert"
