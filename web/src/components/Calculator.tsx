@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import {
   calculateQuote,
   fetchLiveCatalog,
@@ -496,13 +497,13 @@ function OrderModal({
   summary: CalcSummary;
   onClose: () => void;
 }) {
+  const router = useRouter();
   const titleId = useId();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("+375");
   const [email, setEmail] = useState("");
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const firstFieldRef = useRef<HTMLInputElement>(null);
 
@@ -547,10 +548,9 @@ function OrderModal({
           total_with_vat: summary.total_with_vat,
         },
       });
-      setDone(true);
+      router.push("/spasibo");
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Не удалось отправить");
-    } finally {
       setSubmitting(false);
     }
   }
@@ -583,112 +583,104 @@ function OrderModal({
         </div>
 
         <div className="px-5 py-4">
-          {done ? (
-            <p className="py-6 text-center text-base leading-relaxed text-ink">
-              Спасибо за заявку! Наш менеджер свяжется с вами в течение 15 минут.
-            </p>
-          ) : (
-            <>
-              <div className="rounded-md border border-line bg-surface p-3 text-sm">
-                <p className="text-xs font-medium uppercase tracking-wider text-muted">Сводка заказа</p>
-                <ul className="mt-2 space-y-2">
-                  {results.map((item, i) => (
-                    <li key={`${item.length}-${item.category}-${i}`} className="flex justify-between gap-3 text-ink-soft">
-                      <span>
-                        {item.length}×{item.width}×{item.height} мм · {item.category_label} ·{" "}
-                        {item.material_label} · {item.quantity} шт.
-                      </span>
-                      <span className="shrink-0 font-medium text-ink">
-                        {formatByn(item.total_price_no_vat)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-3 flex justify-between border-t border-line pt-3 font-medium text-ink">
-                  <span>Без НДС / с НДС</span>
+          <div className="rounded-md border border-line bg-surface p-3 text-sm">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted">Сводка заказа</p>
+            <ul className="mt-2 space-y-2">
+              {results.map((item, i) => (
+                <li key={`${item.length}-${item.category}-${i}`} className="flex justify-between gap-3 text-ink-soft">
                   <span>
-                    {formatByn(summary.total_no_vat)} / {formatByn(summary.total_with_vat)}
+                    {item.length}×{item.width}×{item.height} мм · {item.category_label} ·{" "}
+                    {item.material_label} · {item.quantity} шт.
                   </span>
-                </div>
-              </div>
+                  <span className="shrink-0 font-medium text-ink">
+                    {formatByn(item.total_price_no_vat)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-3 flex justify-between border-t border-line pt-3 font-medium text-ink">
+              <span>Без НДС / с НДС</span>
+              <span>
+                {formatByn(summary.total_no_vat)} / {formatByn(summary.total_with_vat)}
+              </span>
+            </div>
+          </div>
 
-              <form className="mt-4 space-y-3" onSubmit={onSubmit}>
-                <label className="block text-xs font-medium text-muted">
-                  Имя *
-                  <input
-                    ref={firstFieldRef}
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="focus-ring mt-1.5 w-full rounded-md border border-line bg-white px-3 py-2.5 text-sm text-ink"
-                    autoComplete="name"
-                  />
-                </label>
-                <label className="block text-xs font-medium text-muted">
-                  Телефон *
-                  <input
-                    required
-                    value={phone}
-                    onChange={(e) => setPhone(formatPhoneMask(e.target.value))}
-                    className="focus-ring mt-1.5 w-full rounded-md border border-line bg-white px-3 py-2.5 text-sm text-ink"
-                    inputMode="tel"
-                    autoComplete="tel"
-                    placeholder="+375 (XX) XXX-XX-XX"
-                  />
-                </label>
-                <label className="block text-xs font-medium text-muted">
-                  Email
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="focus-ring mt-1.5 w-full rounded-md border border-line bg-white px-3 py-2.5 text-sm text-ink"
-                    autoComplete="email"
-                  />
-                </label>
-                <label className="block text-xs font-medium text-muted">
-                  Комментарий менеджеру
-                  <textarea
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    rows={3}
-                    className="focus-ring mt-1.5 w-full resize-y rounded-md border border-line bg-white px-3 py-2.5 text-sm text-ink"
-                  />
-                </label>
+          <form className="mt-4 space-y-3" onSubmit={onSubmit}>
+            <label className="block text-xs font-medium text-muted">
+              Имя *
+              <input
+                ref={firstFieldRef}
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="focus-ring mt-1.5 w-full rounded-md border border-line bg-white px-3 py-2.5 text-sm text-ink"
+                autoComplete="name"
+              />
+            </label>
+            <label className="block text-xs font-medium text-muted">
+              Телефон *
+              <input
+                required
+                value={phone}
+                onChange={(e) => setPhone(formatPhoneMask(e.target.value))}
+                className="focus-ring mt-1.5 w-full rounded-md border border-line bg-white px-3 py-2.5 text-sm text-ink"
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder="+375 (XX) XXX-XX-XX"
+              />
+            </label>
+            <label className="block text-xs font-medium text-muted">
+              Email
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="focus-ring mt-1.5 w-full rounded-md border border-line bg-white px-3 py-2.5 text-sm text-ink"
+                autoComplete="email"
+              />
+            </label>
+            <label className="block text-xs font-medium text-muted">
+              Комментарий менеджеру
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                rows={3}
+                className="focus-ring mt-1.5 w-full resize-y rounded-md border border-line bg-white px-3 py-2.5 text-sm text-ink"
+              />
+            </label>
 
-                {formError && <p className="text-sm text-red-700">{formError}</p>}
+            {formError && <p className="text-sm text-red-700">{formError}</p>}
 
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="focus-ring inline-flex w-full cursor-pointer items-center justify-center rounded-md bg-cta px-5 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-cta-hover disabled:opacity-60"
-                >
-                  {submitting ? "Отправка…" : "Отправить заказ"}
-                </button>
-                <p className="text-[11px] leading-relaxed text-muted">
-                  Нажимая «Оформить заявку», я соглашаюсь на обработку персональных данных согласно{" "}
-                  <a
-                    href="/docs/personal-data-policy.pdf"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-cta underline-offset-2 hover:underline"
-                  >
-                    Положению о политике
-                  </a>{" "}
-                  и{" "}
-                  <a
-                    href="/docs/personal-data-terms.pdf"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-cta underline-offset-2 hover:underline"
-                  >
-                    Условиям обработки
-                  </a>
-                  .
-                </p>
-              </form>
-            </>
-          )}
+            <button
+              type="submit"
+              disabled={submitting}
+              className="focus-ring inline-flex w-full cursor-pointer items-center justify-center rounded-md bg-cta px-5 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-cta-hover disabled:opacity-60"
+            >
+              {submitting ? "Отправка…" : "Отправить заказ"}
+            </button>
+            <p className="text-[11px] leading-relaxed text-muted">
+              Нажимая «Оформить заявку», я соглашаюсь на обработку персональных данных согласно{" "}
+              <a
+                href="/docs/personal-data-policy.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-cta underline-offset-2 hover:underline"
+              >
+                Положению о политике
+              </a>{" "}
+              и{" "}
+              <a
+                href="/docs/personal-data-terms.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-cta underline-offset-2 hover:underline"
+              >
+                Условиям обработки
+              </a>
+              .
+            </p>
+          </form>
         </div>
       </div>
     </div>
