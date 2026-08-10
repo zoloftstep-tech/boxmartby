@@ -5,11 +5,11 @@ import { useEffect, useState } from "react";
 import { IconPhone } from "../icons";
 
 const NAV = [
-  { href: "#about", label: "О нас" },
-  { href: "#catalog", label: "Каталог" },
-  { href: "#sellers", label: "Селлерам" },
-  { href: "#calculator", label: "Калькулятор" },
-  { href: "#faq", label: "FAQ" },
+  { href: "/#about", label: "О нас" },
+  { href: "/#catalog", label: "Каталог" },
+  { href: "/#sellers", label: "Селлерам" },
+  { href: "/#calculator", label: "Калькулятор" },
+  { href: "/#faq", label: "FAQ" },
 ];
 
 export function Header() {
@@ -31,7 +31,7 @@ export function Header() {
     >
       <div className="section-pad">
         <div className="container-site flex h-16 items-center justify-between gap-4 md:h-[4.5rem]">
-          <a href="#top" className="focus-ring group flex min-w-0 flex-1 cursor-pointer items-center gap-2 sm:gap-3">
+          <a href="/" className="focus-ring group flex min-w-0 flex-1 cursor-pointer items-center gap-2 sm:gap-3">
             <Image
               src="/logo-mark.png"
               alt="БОКСМАРТ — логотип"
@@ -71,7 +71,7 @@ export function Header() {
               +375 (29) 616-81-69
             </a>
             <a
-              href="#calculator"
+              href="/#calculator"
               className="focus-ring inline-flex cursor-pointer items-center whitespace-nowrap rounded-md bg-cta px-2.5 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:bg-cta-hover sm:px-3.5 sm:text-sm"
             >
               <span className="sm:hidden">Рассчитать</span>

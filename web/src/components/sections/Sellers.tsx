@@ -70,6 +70,21 @@ export function Sellers() {
                 Флексопечать логотипа
               </span>
             </div>
+
+            <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+              <a
+                href="/korobki-dlya-wildberries"
+                className="focus-ring cursor-pointer font-medium text-cta underline-offset-2 hover:underline"
+              >
+                Коробки для Wildberries →
+              </a>
+              <a
+                href="/korobki-dlya-marketplejsov"
+                className="focus-ring cursor-pointer font-medium text-cta underline-offset-2 hover:underline"
+              >
+                Коробки для маркетплейсов →
+              </a>
+            </div>
           </div>
 
           <div className="overflow-hidden rounded-lg border border-line bg-surface-elevated">

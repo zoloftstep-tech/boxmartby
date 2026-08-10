@@ -102,3 +102,18 @@ export function buildFaqJsonLd() {
     })),
   };
 }
+
+export function buildWebSiteJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE_NAME,
+    url: SITE_URL,
+    description: SITE_DESCRIPTION,
+    publisher: {
+      "@type": "Organization",
+      name: "ООО «БОКСМАРТ»",
+    },
+    inLanguage: "ru-BY",
+  };
+}

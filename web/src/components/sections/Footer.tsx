@@ -24,6 +24,28 @@ export function Footer() {
               Производство картонных коробок и гофротары в Минске. Прямые цены для бизнеса и
               селлеров маркетплейсов.
             </p>
+            <ul className="mt-5 space-y-2 text-sm">
+              <li>
+                <a href="/korobki-kartonnye-minsk" className="focus-ring cursor-pointer text-slate-400 hover:text-white">
+                  Коробки в Минске
+                </a>
+              </li>
+              <li>
+                <a href="/korobki-dlya-wildberries" className="focus-ring cursor-pointer text-slate-400 hover:text-white">
+                  Коробки для Wildberries
+                </a>
+              </li>
+              <li>
+                <a href="/korobki-dlya-marketplejsov" className="focus-ring cursor-pointer text-slate-400 hover:text-white">
+                  Коробки для маркетплейсов
+                </a>
+              </li>
+              <li>
+                <a href="/korobki-kartonnye-optom" className="focus-ring cursor-pointer text-slate-400 hover:text-white">
+                  Коробки оптом
+                </a>
+              </li>
+            </ul>
           </div>
 
           <div>
@@ -112,7 +134,7 @@ export function Footer() {
             >
               Положение о политике в отношении обработки персональных
             </a>
-            <a href="#calculator" className="focus-ring cursor-pointer text-slate-400 hover:text-white">
+            <a href="/#calculator" className="focus-ring cursor-pointer text-slate-400 hover:text-white">
               Рассчитать стоимость →
             </a>
           </div>

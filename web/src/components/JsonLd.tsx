@@ -2,10 +2,16 @@ import {
   buildFaqJsonLd,
   buildLocalBusinessJsonLd,
   buildOrganizationJsonLd,
+  buildWebSiteJsonLd,
 } from "@/lib/site";
 
 export function JsonLd() {
-  const graphs = [buildOrganizationJsonLd(), buildLocalBusinessJsonLd(), buildFaqJsonLd()];
+  const graphs = [
+    buildWebSiteJsonLd(),
+    buildOrganizationJsonLd(),
+    buildLocalBusinessJsonLd(),
+    buildFaqJsonLd(),
+  ];
 
   return (
     <>
