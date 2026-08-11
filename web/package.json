@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:pricing": "tsx scripts/test-pricing-golden.ts",
+    "test": "npm run test:pricing"
   },
   "dependencies": {
     "next": "^15.3.0",
@@ -23,6 +25,7 @@
     "eslint": "^9.0.0",
     "eslint-config-next": "^15.3.0",
     "tailwindcss": "^4.1.0",
+    "tsx": "^4.23.12",
     "typescript": "^5.8.0"
   }
 }

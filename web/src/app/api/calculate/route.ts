@@ -91,7 +91,17 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  const pricingSource = source === "remote" ? "local-fallback" : "local";
+  if (pricingSource === "local-fallback") {
+    console.warn(
+      "calculate: using local-fallback (BoxCalc /api/calculate unavailable or misconfigured)",
+    );
+  } else if (pricingSource === "local") {
+    console.warn(
+      "calculate: using local pricing (CALCULATOR_DEFAULTS_URL/API_KEY or calculate URL not set)",
+    );
+  }
   const res = NextResponse.json(calculateItems(items, pricing));
-  res.headers.set("X-Pricing-Source", source === "remote" ? "local-fallback" : "local");
+  res.headers.set("X-Pricing-Source", pricingSource);
   return res;
 }
