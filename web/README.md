@@ -2,6 +2,8 @@
 
 B2B landing page for ООО «БОКСМАРТ» — corrugated packaging manufacturer (Minsk).
 
+**Platform ops (Site + BoxCalc + CRM):** see [`../OPS.md`](../OPS.md) before changing pricing, orders, Telegram, or env.
+
 ## Stack
 
 - Next.js (App Router)
