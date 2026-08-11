@@ -13,14 +13,15 @@
 |---------|--------|------------------|------|
 | **Boxmart Site** | `zoloftstep-tech/boxmartby` | `boxmartby` / `boxmartby.vercel.app` | Витрина, калькулятор на сайте, заявки, legacy Telegram/Optopak |
 | **BoxCalc** | `zoloftstep-tech/boxcalculator` | `boxcalculator` | Калькулятор менеджеров (SPA), org-тарифы, `POST /api/calculate`, FEFCO 0201 |
-| **Boxmart CRM** | отдельный репо CRM | `boxmart-crm.vercel.app` | SoT статусов заказов, ingest с сайта, Optopak cutover target |
+| **Boxmart CRM** | `zoloftstep-tech/boxmart-crm` | `boxmart-crm.vercel.app` | SoT статусов/заказов, ingest, Optopak — детальный OPS в репо CRM: [`OPS.md`](https://github.com/zoloftstep-tech/boxmart-crm/blob/main/OPS.md) |
 
 Локальные пути (машина владельца):
 
 - Site: `/Users/rostislav/Documents/Cursor Projects/Boxmart Site`
 - BoxCalc: `/Users/rostislav/Documents/Cursor Projects/boxcalculator-main`
+- CRM: `/Users/rostislav/Documents/Cursor Projects/boxmart-crm`
 
-Root Directory на Vercel у Site и BoxCalc: **`web`**.
+Root Directory на Vercel у Site, BoxCalc и CRM: **`web`**.
 
 ### Источники правды (SoT)
 
@@ -246,6 +247,7 @@ curl -s -D- -X POST "https://YOUR-SITE/api/live-catalog" -o /dev/null | grep -i 
 | ТЗ калькулятора | `boxcalculator/BoxCalc-TZ-v5.md` |
 | ТЗ сайта / API / статусы | `BoxMart-*-TZ.md` в корнях репо |
 | Бриф weakspots | локально Downloads / паспорт Perplexity |
+| **CRM OPS (детальный)** | `/Users/rostislav/Documents/Cursor Projects/boxmart-crm/OPS.md` |
 
 ---
 
