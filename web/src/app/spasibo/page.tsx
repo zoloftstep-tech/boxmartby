@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AdsConversionEvent } from "@/components/AdsConversionEvent";
 import { LandingShell } from "@/components/landing/LandingShell";
 
 export const metadata: Metadata = {
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
 export default function SpasiboPage() {
   return (
     <LandingShell>
+      <AdsConversionEvent />
       <section className="relative overflow-hidden kraft-texture">
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-surface to-transparent" />
         <div className="section-pad relative">
