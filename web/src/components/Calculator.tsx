@@ -84,6 +84,10 @@ const OUR_DIES_NOTICE =
 const SELF_LOCK_NOTICE =
   "Этого формата нет в наличии. Выберите «Наши штанцформы» или оставьте заявку — менеджер согласует детали.";
 
+const MIN_POSITION_QUANTITY = 15;
+const MIN_POSITION_QUANTITY_NOTICE = `Минимальный тираж позиции — ${MIN_POSITION_QUANTITY} шт.`;
+const MIN_ORDER_NOTICE = `Оформление заявки доступно от ${MIN_POSITION_QUANTITY} шт. на позицию.`;
+
 function draftDimWarnings(item: DraftItem): string[] {
   if (item.category !== "fourFlap" || !isComplete(item)) return [];
   return dimWarningsForItem(
@@ -95,6 +99,15 @@ function draftDimWarnings(item: DraftItem): string[] {
     },
     MIN_DIMS,
   );
+}
+
+function isQuantityBelowMinimum(item: DraftItem): boolean {
+  const quantity = Number(item.quantity);
+  return Number.isFinite(quantity) && quantity > 0 && quantity < MIN_POSITION_QUANTITY;
+}
+
+function hasQuantityBelowMinimum(items: DraftItem[]): boolean {
+  return items.some(isQuantityBelowMinimum);
 }
 
 const SELECTABLE_MATERIALS: { id: MaterialId; label: string }[] = [
@@ -226,7 +239,8 @@ export function Calculator() {
     setItems((prev) => (prev.length <= 1 ? prev : prev.filter((item) => item.id !== id)));
   }
 
-  const canOrder = Boolean(results && summary && !loading && !error);
+  const hasMinQtyViolation = hasQuantityBelowMinimum(items);
+  const canOrder = Boolean(results && summary && !loading && !error && !hasMinQtyViolation);
   const hasOurDiesWithoutCatalog = items.some((item) => item.category === "ourDies") && ourDies.length === 0;
 
   return (
@@ -362,6 +376,15 @@ export function Calculator() {
                   </label>
                 </div>
 
+                {isQuantityBelowMinimum(item) && (
+                  <p
+                    role="status"
+                    className="mt-3 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2.5 text-sm leading-relaxed text-amber-950"
+                  >
+                    {MIN_POSITION_QUANTITY_NOTICE}
+                  </p>
+                )}
+
                 {item.category === "ourDies" && (
                   <p
                     role="status"
@@ -467,6 +490,7 @@ export function Calculator() {
             {hasOurDiesWithoutCatalog && (
               <p className="mt-2 text-sm text-amber-800">Штанцформы пока не добавлены</p>
             )}
+            {hasMinQtyViolation && <p className="mt-2 text-sm text-amber-800">{MIN_ORDER_NOTICE}</p>}
             {error && <p className="mt-2 text-sm text-red-700">{error}</p>}
           </div>
 
@@ -482,7 +506,7 @@ export function Calculator() {
       </div>
 
       {modalOpen && results && summary && (
-        <OrderModal results={results} summary={summary} onClose={() => setModalOpen(false)} />
+        <OrderModal results={results} summary={summary} items={items} onClose={() => setModalOpen(false)} />
       )}
     </section>
   );
@@ -491,10 +515,12 @@ export function Calculator() {
 function OrderModal({
   results,
   summary,
+  items,
   onClose,
 }: {
   results: CalcItemResult[];
   summary: CalcSummary;
+  items: DraftItem[];
   onClose: () => void;
 }) {
   const router = useRouter();
@@ -532,6 +558,10 @@ function OrderModal({
     const e164 = phoneToE164(phone);
     if (!/^\+375\d{9}$/.test(e164)) {
       setFormError("Телефон в формате +375 (XX) XXX-XX-XX");
+      return;
+    }
+    if (hasQuantityBelowMinimum(items)) {
+      setFormError(MIN_ORDER_NOTICE);
       return;
     }
 
