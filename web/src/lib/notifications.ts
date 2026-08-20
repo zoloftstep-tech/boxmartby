@@ -14,7 +14,8 @@ function formatMoney(value: number): string {
 
 function formatItemLine(item: CalcItemResult, index: number): string {
   const special = isSpecialRetailDims(item.length, item.width, item.height);
-  const base = `${index + 1}. ${item.length}×${item.width}×${item.height} мм · ${item.category_label} · ${item.material_label} · ${item.quantity} шт — ${formatMoney(item.price_per_unit_no_vat)} BYN/шт, итого ${formatMoney(item.total_price_no_vat)} BYN`;
+  const fefco = item.formulaTypeId ? ` · ${item.formulaTypeId.replace(/^fefco_/, "FEFCO ")}` : "";
+  const base = `${index + 1}. ${item.length}×${item.width}×${item.height} мм · ${item.category_label}${fefco} · ${item.material_label} · ${item.quantity} шт — ${formatMoney(item.price_per_unit_no_vat)} BYN/шт, итого ${formatMoney(item.total_price_no_vat)} BYN`;
   return special ? `${base} (специальная розничная позиция — уточнить цену)` : base;
 }
 

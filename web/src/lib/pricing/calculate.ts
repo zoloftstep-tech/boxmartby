@@ -9,17 +9,25 @@ import {
   type PricingTierCategory,
   type QtyTier,
 } from "./pricing-config";
-import { blankAreaForFormula } from "./fefco-formulas";
+import { blankAreaForFormula, defaultFormulaForCategory, isFormulaForCategory } from "./fefco-formulas";
 import { localPricingConfig, type LivePricingConfig } from "./remote-defaults";
 
 export type PricingInput = CalcItemInput;
 
-function blankAreaFourFlap(A: number, B: number, H: number): number {
-  return blankAreaForFormula("fefco_0201", A, B, H);
+function blankAreaFourFlap(A: number, B: number, H: number, formulaTypeId?: string): number {
+  const id =
+    formulaTypeId && isFormulaForCategory(formulaTypeId, "fourFlap")
+      ? formulaTypeId
+      : defaultFormulaForCategory("fourFlap");
+  return blankAreaForFormula(id, A, B, H);
 }
 
-function blankAreaSelfLock(A: number, B: number, H: number): number {
-  return blankAreaForFormula("fefco_0409", A, B, H);
+function blankAreaSelfLock(A: number, B: number, H: number, formulaTypeId?: string): number {
+  const id =
+    formulaTypeId && isFormulaForCategory(formulaTypeId, "selfLock")
+      ? formulaTypeId
+      : defaultFormulaForCategory("selfLock");
+  return blankAreaForFormula(id, A, B, H);
 }
 
 /** ourDies берёт коэффициенты самосборных. */
@@ -37,7 +45,9 @@ export function blankArea(
   if (category === "ourDies") {
     return blankAreaForFormula(formulaTypeId || "fefco_0409", A, B, H);
   }
-  return category === "fourFlap" ? blankAreaFourFlap(A, B, H) : blankAreaSelfLock(A, B, H);
+  return category === "fourFlap"
+    ? blankAreaFourFlap(A, B, H, formulaTypeId)
+    : blankAreaSelfLock(A, B, H, formulaTypeId);
 }
 
 export function findDie(dies: OurDie[], dieId: string | undefined): OurDie | undefined {
@@ -96,6 +106,13 @@ export function validateItem(item: PricingInput, pricing: LivePricingConfig = lo
         return `${name}: ожидается целое число мм`;
       }
     }
+    if (
+      item.formulaTypeId &&
+      (category === "fourFlap" || category === "selfLock") &&
+      !isFormulaForCategory(item.formulaTypeId, category)
+    ) {
+      return "formulaTypeId: не соответствует категории";
+    }
   }
 
   // minL / minW / minWH — не блокируют расчёт (как в BoxCalc):
@@ -143,7 +160,14 @@ export function calculateItem(
   const category = item.category as BoxCategory;
   const material = item.material as MaterialId;
 
-  const rawArea = blankArea(category, A, B, H, die?.formulaTypeId);
+  const formulaTypeId = category === "ourDies" ? die?.formulaTypeId : item.formulaTypeId;
+  const resolvedFormulaId =
+    category === "ourDies"
+      ? die?.formulaTypeId || "fefco_0409"
+      : formulaTypeId && isFormulaForCategory(formulaTypeId, category)
+        ? formulaTypeId
+        : defaultFormulaForCategory(category);
+  const rawArea = blankArea(category, A, B, H, formulaTypeId);
   // Full precision for price (matches BoxCalc SPA); UI may round for display.
   const area = rawArea;
   const tiers = pricing.tiersOpt[tierCategoryId(category)];
@@ -172,6 +196,7 @@ export function calculateItem(
     area_m2: area,
     price_per_unit_no_vat: unitNet,
     total_price_no_vat: totalNet,
+    formulaTypeId: resolvedFormulaId,
   };
 }
 

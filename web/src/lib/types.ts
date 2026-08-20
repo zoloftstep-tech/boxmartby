@@ -18,6 +18,8 @@ export type CalcItemInput = {
   category: BoxCategory;
   material: MaterialId;
   dieId?: string;
+  /** FEFCO blank type for fourFlap / selfLock (ignored for ourDies). */
+  formulaTypeId?: string;
 };
 
 export type CalcItemResult = {
@@ -33,6 +35,8 @@ export type CalcItemResult = {
   area_m2: number;
   price_per_unit_no_vat: number;
   total_price_no_vat: number;
+  /** Resolved FEFCO blank id used for area (selfLock / fourFlap / ourDies). */
+  formulaTypeId?: string;
 };
 
 export type CalcSummary = {

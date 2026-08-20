@@ -11,8 +11,16 @@ import {
   submitOrder,
 } from "@/lib/api";
 import type { BoxCategory, CalcItemResult, CalcSummary, MaterialId, OurDie } from "@/lib/types";
-import { dimWarningsForItem, MIN_DIMS } from "@/lib/pricing";
+import {
+  defaultFormulaForCategory,
+  dimWarningsForItem,
+  fefcoTypesForCategory,
+  MIN_DIMS,
+} from "@/lib/pricing";
 import { IconClose, IconPlus, IconTrash } from "./icons";
+
+const SELF_LOCK_FEFCO_TYPES = fefcoTypesForCategory("selfLock");
+const DEFAULT_SELF_LOCK_FORMULA = defaultFormulaForCategory("selfLock");
 
 type DraftItem = {
   id: string;
@@ -23,6 +31,7 @@ type DraftItem = {
   category: BoxCategory;
   material: MaterialId;
   dieId: string;
+  formulaTypeId: string;
 };
 
 function emptyItem(): DraftItem {
@@ -35,6 +44,7 @@ function emptyItem(): DraftItem {
     category: "fourFlap",
     material: "t22",
     dieId: "",
+    formulaTypeId: "",
   };
 }
 
@@ -58,6 +68,10 @@ function toPayload(items: DraftItem[]) {
     category: item.category ?? "fourFlap",
     material: item.material ?? "t22",
     dieId: item.category === "ourDies" && item.dieId ? item.dieId : undefined,
+    formulaTypeId:
+      item.category === "selfLock"
+        ? item.formulaTypeId || DEFAULT_SELF_LOCK_FORMULA
+        : undefined,
   }));
 }
 
@@ -80,9 +94,6 @@ const SPECIAL_RETAIL_NOTICE =
 
 const OUR_DIES_NOTICE =
   "Нет нужного размера? Выберите «Самосборные», укажите параметры и оставьте заявку — менеджер согласует детали.";
-
-const SELF_LOCK_NOTICE =
-  "Этого формата нет в наличии. Выберите «Наши штанцформы» или оставьте заявку — менеджер согласует детали.";
 
 const MIN_POSITION_QUANTITY = 15;
 const MIN_POSITION_QUANTITY_NOTICE = `Минимальный тираж позиции — ${MIN_POSITION_QUANTITY} шт.`;
@@ -163,6 +174,7 @@ export function Calculator() {
         category: item.category ?? "fourFlap",
         material: allowed.has(item.material) ? item.material : "t22",
         dieId: item.dieId ?? "",
+        formulaTypeId: item.formulaTypeId ?? "",
       })),
     );
   }, []);
@@ -183,7 +195,18 @@ export function Calculator() {
     try {
       const data = await calculateQuote(toPayload(draft));
       if (requestId !== seq.current) return;
-      setResults(data.items);
+      const enrichedItems = data.items.map((row, i) => {
+        const draftItem = draft[i];
+        if (!draftItem || row.formulaTypeId) return row;
+        if (draftItem.category === "selfLock") {
+          return {
+            ...row,
+            formulaTypeId: draftItem.formulaTypeId || DEFAULT_SELF_LOCK_FORMULA,
+          };
+        }
+        return row;
+      });
+      setResults(enrichedItems);
       setSummary(data.summary);
     } catch (err) {
       if (requestId !== seq.current) return;
@@ -213,9 +236,20 @@ export function Calculator() {
       prev.map((item) => {
         if (item.id !== id) return item;
         if (category === "ourDies") {
-          return applyDieDims({ ...item, category, dieId: "" }, ourDies[0]);
+          return applyDieDims(
+            { ...item, category, dieId: "", formulaTypeId: "" },
+            ourDies[0],
+          );
         }
-        return { ...item, category, dieId: "" };
+        if (category === "selfLock") {
+          return {
+            ...item,
+            category,
+            dieId: "",
+            formulaTypeId: item.formulaTypeId || DEFAULT_SELF_LOCK_FORMULA,
+          };
+        }
+        return { ...item, category, dieId: "", formulaTypeId: "" };
       }),
     );
   }
@@ -224,6 +258,12 @@ export function Calculator() {
     const die = ourDies.find((d) => d.id === dieId);
     setItems((prev) =>
       prev.map((item) => (item.id === id ? applyDieDims({ ...item, category: "ourDies" }, die) : item)),
+    );
+  }
+
+  function updateFormulaType(id: string, formulaTypeId: string) {
+    setItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, formulaTypeId } : item)),
     );
   }
 
@@ -347,6 +387,23 @@ export function Calculator() {
                     </label>
                   )}
 
+                  {item.category === "selfLock" && (
+                    <label className="block text-xs font-medium text-muted">
+                      Тип развёртки FEFCO
+                      <select
+                        value={item.formulaTypeId || DEFAULT_SELF_LOCK_FORMULA}
+                        onChange={(e) => updateFormulaType(item.id, e.target.value)}
+                        className="focus-ring mt-1.5 w-full cursor-pointer rounded-md border border-line bg-white px-3 py-2.5 text-sm text-ink"
+                      >
+                        {SELF_LOCK_FEFCO_TYPES.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+
                   <label className="block text-xs font-medium text-muted">
                     Материал картона
                     <select
@@ -391,18 +448,6 @@ export function Calculator() {
                     className="mt-3 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2.5 text-sm leading-relaxed text-amber-950"
                   >
                     {OUR_DIES_NOTICE}
-                  </p>
-                )}
-
-                {item.category === "selfLock" &&
-                  Number(item.length) > 0 &&
-                  Number(item.width) > 0 &&
-                  Number(item.height) > 0 && (
-                  <p
-                    role="status"
-                    className="mt-3 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2.5 text-sm leading-relaxed text-amber-950"
-                  >
-                    {SELF_LOCK_NOTICE}
                   </p>
                 )}
 

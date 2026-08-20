@@ -66,6 +66,7 @@ export async function POST(req: NextRequest) {
       category: raw.category ?? "fourFlap",
       material: raw.material ?? "t22",
       dieId: raw.dieId ? String(raw.dieId) : undefined,
+      formulaTypeId: raw.formulaTypeId ? String(raw.formulaTypeId) : undefined,
     };
 
     const err = validateItem(item, pricing);

@@ -58,6 +58,20 @@ const CASES: Golden[] = [
     area_m2: 0.522372,
     price_per_unit_rounded2: 1.45,
   },
+  {
+    name: "selfLock fefco_0470 300×200×150×500 t24 → 1.67",
+    item: {
+      length: 300,
+      width: 200,
+      height: 150,
+      quantity: 500,
+      category: "selfLock",
+      material: "t24",
+      formulaTypeId: "fefco_0470",
+    },
+    area_m2: 0.60098,
+    price_per_unit_rounded2: 1.67,
+  },
 ];
 
 const pricing = localPricingConfig();

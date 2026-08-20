@@ -12,7 +12,8 @@ export {
   type PricingTierCategory,
 } from "./pricing-config";
 
-export { blankAreaForFormula, resolveFefcoFormula } from "./fefco-formulas";
+export { blankAreaForFormula, resolveFefcoFormula, FEFCO_TYPE_CATALOG, fefcoTypesForCategory, defaultFormulaForCategory, isFormulaForCategory } from "./fefco-formulas";
+export type { FefcoTypeMeta, FefcoPricingCategory } from "./fefco-formulas";
 
 export {
   areaSurchargeFor,
