@@ -1,9 +1,9 @@
-import { IconCarton, IconCheck, IconPrint } from "../icons";
+import { IconCarton, IconCheck } from "../icons";
 
 const POINTS = [
   "Подбор марки картона под вес и способ доставки — без перерасхода материала",
   "Габариты под требования Wildberries и Ozon к транспортной упаковке",
-  "Флексопечать логотипа для узнаваемости бренда на складе и у покупателя",
+  "Онлайн-расчёт цены по размерам, тиражу и марке картона",
 ];
 
 const GRADES = [
@@ -28,7 +28,7 @@ const GRADES = [
   {
     grade: "Профиль Е",
     profile: "Микрогофра (E)",
-    best: "Компактная упаковка, аккуратный внешний вид, удобна под печать логотипа",
+    best: "Компактная упаковка и аккуратный внешний вид при минимальной толщине",
     strength: "Тонкий профиль волны — не отдельная марка в калькуляторе",
   },
 ];
@@ -47,8 +47,8 @@ export function Sellers() {
               Работаем с требованиями Wildberries и Ozon
             </h2>
             <p className="mt-4 max-w-xl text-base leading-relaxed text-ink-soft">
-              Помогаем селлерам закрыть упаковку под FBO/FBS: нужная марка картона, точный
-              внутренний размер и опциональная флексопечать — без лишней толщины и переплат.
+              Помогаем селлерам закрыть упаковку под FBO/FBS: нужная марка картона и точный
+              внутренний размер — без лишней толщины и переплат.
             </p>
 
             <ul className="mt-8 space-y-4">
@@ -66,8 +66,8 @@ export function Sellers() {
                 Марки Т-22 · Т-21 · Т-23
               </span>
               <span className="inline-flex items-center gap-2 rounded-md border border-line bg-surface-elevated px-3 py-2 text-xs font-medium text-ink-soft">
-                <IconPrint className="h-4 w-4 text-kraft" />
-                Флексопечать логотипа
+                <IconCarton className="h-4 w-4 text-kraft" />
+                Расчёт онлайн
               </span>
             </div>
 
