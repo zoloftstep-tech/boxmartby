@@ -602,6 +602,7 @@ function OrderModal({
   const [phone, setPhone] = useState("+375");
   const [email, setEmail] = useState("");
   const [comment, setComment] = useState("");
+  const [personalDataConsent, setPersonalDataConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const firstFieldRef = useRef<HTMLInputElement>(null);
@@ -637,6 +638,10 @@ function OrderModal({
       setFormError(MIN_ORDER_NOTICE);
       return;
     }
+    if (!personalDataConsent) {
+      setFormError("Нужно согласие на обработку персональных данных");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -645,6 +650,7 @@ function OrderModal({
         phone: e164,
         email: email.trim() || undefined,
         comment: comment.trim() || undefined,
+        personalDataConsent: true,
         items: results,
         summary: {
           total_no_vat: summary.total_no_vat,
@@ -755,34 +761,45 @@ function OrderModal({
 
             {formError && <p className="text-sm text-red-700">{formError}</p>}
 
+            <label className="flex cursor-pointer items-start gap-2.5 text-[11px] leading-relaxed text-muted">
+              <input
+                type="checkbox"
+                checked={personalDataConsent}
+                onChange={(e) => setPersonalDataConsent(e.target.checked)}
+                className="focus-ring mt-0.5 h-4 w-4 shrink-0 rounded border-line text-cta"
+              />
+              <span>
+                Согласен на обработку персональных данных согласно{" "}
+                <a
+                  href="/docs/personal-data-policy.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-cta underline-offset-2 hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Положению о политике
+                </a>{" "}
+                и{" "}
+                <a
+                  href="/docs/personal-data-terms.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-cta underline-offset-2 hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Условиям обработки
+                </a>
+                .
+              </span>
+            </label>
+
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || !personalDataConsent}
               className="focus-ring inline-flex w-full cursor-pointer items-center justify-center rounded-md bg-cta px-5 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-cta-hover disabled:opacity-60"
             >
               {submitting ? "Отправка…" : "Отправить заказ"}
             </button>
-            <p className="text-[11px] leading-relaxed text-muted">
-              Нажимая «Оформить заявку», я соглашаюсь на обработку персональных данных согласно{" "}
-              <a
-                href="/docs/personal-data-policy.pdf"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-cta underline-offset-2 hover:underline"
-              >
-                Положению о политике
-              </a>{" "}
-              и{" "}
-              <a
-                href="/docs/personal-data-terms.pdf"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-cta underline-offset-2 hover:underline"
-              >
-                Условиям обработки
-              </a>
-              .
-            </p>
           </form>
         </div>
       </div>

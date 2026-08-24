@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Manrope, Plus_Jakarta_Sans } from "next/font/google";
+import { CookieConsent } from "@/components/CookieConsent";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import {
   SITE_DESCRIPTION,
@@ -73,6 +74,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="ru">
       <body className={`${plusJakarta.variable} ${manrope.variable} font-sans antialiased`}>
         <GoogleAnalytics />
+        <CookieConsent />
         {children}
       </body>
     </html>

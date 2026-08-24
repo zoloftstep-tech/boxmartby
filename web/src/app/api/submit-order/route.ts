@@ -15,7 +15,10 @@ type CrmIngestResponse = {
   error?: string;
 };
 
-async function ingestToCrm(order: OrderRequest, idempotencyKey: string): Promise<string> {
+async function ingestToCrm(
+  order: Omit<OrderRequest, "personalDataConsent">,
+  idempotencyKey: string,
+): Promise<string> {
   const crmUrl =
     process.env.CRM_INGEST_URL?.trim() ||
     "https://boxmart-crm.vercel.app/api/ingest/site";
@@ -70,16 +73,24 @@ export async function POST(req: NextRequest) {
   if (!order?.phone || !/^\+375\d{9}$/.test(order.phone)) {
     return NextResponse.json({ error: "Телефон в формате +375XXXXXXXXX" }, { status: 400 });
   }
+  if (order.personalDataConsent !== true) {
+    return NextResponse.json(
+      { error: "Нужно согласие на обработку персональных данных" },
+      { status: 400 },
+    );
+  }
   if (!order.items?.length || !order.summary) {
     return NextResponse.json({ error: "Отсутствует состав заказа" }, { status: 400 });
   }
+
+  const { personalDataConsent: _consent, ...crmOrder } = order;
 
   const idempotencyKey =
     req.headers.get("idempotency-key")?.trim() || `site:${randomUUID()}`;
 
   let order_id: string;
   try {
-    order_id = await ingestToCrm(order, idempotencyKey);
+    order_id = await ingestToCrm(crmOrder, idempotencyKey);
   } catch (err) {
     console.error("[submit-order] CRM ingest failed:", err);
     return NextResponse.json(

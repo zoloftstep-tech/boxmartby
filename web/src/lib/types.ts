@@ -66,6 +66,8 @@ export type OrderRequest = {
   phone: string;
   email?: string;
   comment?: string;
+  /** Must be true — validated on the server; not forwarded to CRM. */
+  personalDataConsent: true;
   items: CalcItemResult[];
   summary: { total_no_vat: number; total_with_vat: number };
 };
