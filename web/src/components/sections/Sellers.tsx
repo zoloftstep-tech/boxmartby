@@ -14,22 +14,16 @@ const GRADES = [
     strength: "Легче и дешевле Т-23",
   },
   {
-    grade: "Т-21",
-    profile: "Трёхслойный лёгкий",
-    best: "Очень лёгкие товары, мелкая фурнитура, расходники — когда важна минимальная толщина и цена",
-    strength: "Легче и дешевле Т-22",
-  },
-  {
     grade: "Т-23",
     profile: "Трёхслойный",
     best: "Лёгкие и средние товары, одежда, аксессуары, косметика",
     strength: "Оптимальное соотношение цена / защита",
   },
   {
-    grade: "Профиль Е",
+    grade: "Е",
     profile: "Микрогофра (E)",
     best: "Компактная упаковка и аккуратный внешний вид при минимальной толщине",
-    strength: "Тонкий профиль волны — не отдельная марка в калькуляторе",
+    strength: "Тонкий профиль волны — в онлайн-калькуляторе",
   },
 ];
 
@@ -63,7 +57,7 @@ export function Sellers() {
             <div className="mt-8 flex flex-wrap gap-3">
               <span className="inline-flex items-center gap-2 rounded-md border border-line bg-surface-elevated px-3 py-2 text-xs font-medium text-ink-soft">
                 <IconCarton className="h-4 w-4 text-kraft" />
-                Марки Т-22 · Т-21 · Т-23
+                Марки Т-22 · Т-23 · Е
               </span>
               <span className="inline-flex items-center gap-2 rounded-md border border-line bg-surface-elevated px-3 py-2 text-xs font-medium text-ink-soft">
                 <IconCarton className="h-4 w-4 text-kraft" />
