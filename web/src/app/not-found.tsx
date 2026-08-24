@@ -37,6 +37,9 @@ export default function NotFound() {
               <Link href="/korobki-dlya-wildberries" className="focus-ring hover:text-ink">
                 Коробки для Wildberries
               </Link>
+              <Link href="/korobki-samosbornye" className="focus-ring hover:text-ink">
+                Самосборные коробки
+              </Link>
               <Link href="/korobki-kartonnye-optom" className="focus-ring hover:text-ink">
                 Коробки оптом
               </Link>

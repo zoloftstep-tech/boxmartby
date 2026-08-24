@@ -73,6 +73,12 @@ export function Sellers() {
                 Коробки для Wildberries →
               </a>
               <a
+                href="/korobki-dlya-ozon"
+                className="focus-ring cursor-pointer font-medium text-cta underline-offset-2 hover:underline"
+              >
+                Коробки для Ozon →
+              </a>
+              <a
                 href="/korobki-dlya-marketplejsov"
                 className="focus-ring cursor-pointer font-medium text-cta underline-offset-2 hover:underline"
               >

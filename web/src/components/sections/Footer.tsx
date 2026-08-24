@@ -36,8 +36,18 @@ export function Footer() {
                 </a>
               </li>
               <li>
+                <a href="/korobki-dlya-ozon" className="focus-ring cursor-pointer text-slate-400 hover:text-white">
+                  Коробки для Ozon
+                </a>
+              </li>
+              <li>
                 <a href="/korobki-dlya-marketplejsov" className="focus-ring cursor-pointer text-slate-400 hover:text-white">
                   Коробки для маркетплейсов
+                </a>
+              </li>
+              <li>
+                <a href="/korobki-samosbornye" className="focus-ring cursor-pointer text-slate-400 hover:text-white">
+                  Самосборные коробки
                 </a>
               </li>
               <li>
