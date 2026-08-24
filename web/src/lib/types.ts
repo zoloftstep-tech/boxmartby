@@ -1,5 +1,12 @@
 export type BoxCategory = "fourFlap" | "selfLock" | "ourDies";
-export type MaterialId = "t22" | "t23" | "t24";
+/** Cardboard grade id from BoxCalc cardTypes. */
+export type MaterialId = string;
+
+export type CatalogMaterial = {
+  id: string;
+  label: string;
+  isReference?: boolean;
+};
 
 export type OurDie = {
   id: string;

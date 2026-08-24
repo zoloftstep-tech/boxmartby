@@ -10,17 +10,39 @@ import {
   phoneToE164,
   submitOrder,
 } from "@/lib/api";
-import type { BoxCategory, CalcItemResult, CalcSummary, MaterialId, OurDie } from "@/lib/types";
+import type {
+  BoxCategory,
+  CalcItemResult,
+  CalcSummary,
+  CatalogMaterial,
+  MaterialId,
+  OurDie,
+} from "@/lib/types";
 import {
   defaultFormulaForCategory,
   dimWarningsForItem,
   fefcoTypesForCategory,
+  MATERIAL_PRICES,
   MIN_DIMS,
+  REFERENCE_MATERIAL,
 } from "@/lib/pricing";
 import { IconClose, IconPlus, IconTrash } from "./icons";
 
 const SELF_LOCK_FEFCO_TYPES = fefcoTypesForCategory("selfLock");
 const DEFAULT_SELF_LOCK_FORMULA = defaultFormulaForCategory("selfLock");
+
+const FALLBACK_MATERIALS: CatalogMaterial[] = Object.entries(MATERIAL_PRICES).map(
+  ([id, info]) => ({
+    id,
+    label: info.label,
+    isReference: info.isReference,
+  }),
+);
+
+function defaultMaterialId(materials: CatalogMaterial[]): MaterialId {
+  const ref = materials.find((m) => m.isReference);
+  return ref?.id ?? materials[0]?.id ?? REFERENCE_MATERIAL;
+}
 
 type DraftItem = {
   id: string;
@@ -34,7 +56,7 @@ type DraftItem = {
   formulaTypeId: string;
 };
 
-function emptyItem(): DraftItem {
+function emptyItem(material: MaterialId = defaultMaterialId(FALLBACK_MATERIALS)): DraftItem {
   return {
     id: crypto.randomUUID(),
     length: "",
@@ -42,7 +64,7 @@ function emptyItem(): DraftItem {
     height: "",
     quantity: "100",
     category: "fourFlap",
-    material: "t22",
+    material,
     dieId: "",
     formulaTypeId: "",
   };
@@ -66,7 +88,7 @@ function toPayload(items: DraftItem[]) {
     height: Number(item.height),
     quantity: Number(item.quantity),
     category: item.category ?? "fourFlap",
-    material: item.material ?? "t22",
+    material: item.material || defaultMaterialId(FALLBACK_MATERIALS),
     dieId: item.category === "ourDies" && item.dieId ? item.dieId : undefined,
     formulaTypeId:
       item.category === "selfLock"
@@ -121,11 +143,6 @@ function hasQuantityBelowMinimum(items: DraftItem[]): boolean {
   return items.some(isQuantityBelowMinimum);
 }
 
-const SELECTABLE_MATERIALS: { id: MaterialId; label: string }[] = [
-  { id: "t22", label: "Т-22" },
-  { id: "t23", label: "Т-23" },
-];
-
 export function Calculator() {
   const [items, setItems] = useState<DraftItem[]>([emptyItem()]);
   const [results, setResults] = useState<CalcItemResult[] | null>(null);
@@ -134,16 +151,25 @@ export function Calculator() {
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [ourDies, setOurDies] = useState<OurDie[]>([]);
+  const [materials, setMaterials] = useState<CatalogMaterial[]>(FALLBACK_MATERIALS);
   const seq = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
     void fetchLiveCatalog()
       .then((data) => {
-        if (!cancelled) setOurDies(data.ourDies ?? []);
+        if (cancelled) return;
+        setOurDies(data.ourDies ?? []);
+        const nextMaterials =
+          Array.isArray(data.materials) && data.materials.length > 0
+            ? data.materials
+            : FALLBACK_MATERIALS;
+        setMaterials(nextMaterials);
       })
       .catch(() => {
-        if (!cancelled) setOurDies([]);
+        if (cancelled) return;
+        setOurDies([]);
+        setMaterials(FALLBACK_MATERIALS);
       });
     return () => {
       cancelled = true;
@@ -165,19 +191,21 @@ export function Calculator() {
     );
   }, [ourDies]);
 
-  // HMR / старый state мог быть без category/material — дозаполняем; материал только из SELECTABLE
+  // Синхронизация марки с live-каталогом (reference / first, если текущей нет)
   useEffect(() => {
-    const allowed = new Set(SELECTABLE_MATERIALS.map((m) => m.id));
+    if (!materials.length) return;
+    const allowed = new Set(materials.map((m) => m.id));
+    const fallback = defaultMaterialId(materials);
     setItems((prev) =>
       prev.map((item) => ({
         ...item,
         category: item.category ?? "fourFlap",
-        material: allowed.has(item.material) ? item.material : "t22",
+        material: allowed.has(item.material) ? item.material : fallback,
         dieId: item.dieId ?? "",
         formulaTypeId: item.formulaTypeId ?? "",
       })),
     );
-  }, []);
+  }, [materials]);
 
   const recalculate = useCallback(async (draft: DraftItem[]) => {
     const hasEmptyDies = draft.some((item) => item.category === "ourDies" && !item.dieId);
@@ -272,7 +300,7 @@ export function Calculator() {
   }
 
   function addItem() {
-    setItems((prev) => [...prev, emptyItem()]);
+    setItems((prev) => [...prev, emptyItem(defaultMaterialId(materials))]);
   }
 
   function removeItem(id: string) {
@@ -408,10 +436,10 @@ export function Calculator() {
                     Материал картона
                     <select
                       value={item.material}
-                      onChange={(e) => updateMaterial(item.id, e.target.value as MaterialId)}
+                      onChange={(e) => updateMaterial(item.id, e.target.value)}
                       className="focus-ring mt-1.5 w-full cursor-pointer rounded-md border border-line bg-white px-3 py-2.5 text-sm text-ink"
                     >
-                      {SELECTABLE_MATERIALS.map((m) => (
+                      {materials.map((m) => (
                         <option key={m.id} value={m.id}>
                           {m.label}
                         </option>

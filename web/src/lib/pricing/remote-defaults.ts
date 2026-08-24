@@ -7,6 +7,7 @@ import {
   VAT_PERCENT,
   type AreaSurchargeRule,
   type MaterialId,
+  type MaterialInfo,
   type OurDie,
   type PricingTierCategory,
   type QtyTier,
@@ -19,10 +20,7 @@ export type LivePricingConfig = {
   minWH: number;
   areaSurcharge: AreaSurchargeRule[];
   tiersOpt: Record<PricingTierCategory, QtyTier[]>;
-  materials: Record<
-    MaterialId,
-    { label: string; costPerSqM: number; isReference?: boolean }
-  >;
+  materials: Record<string, MaterialInfo>;
   referenceMaterial: MaterialId;
   ourDies: OurDie[];
 };
@@ -35,7 +33,7 @@ export function localPricingConfig(): LivePricingConfig {
     minWH: MIN_DIMS.minWH,
     areaSurcharge: AREA_SURCHARGE,
     tiersOpt: QTY_TIERS_OPT,
-    materials: MATERIAL_PRICES,
+    materials: { ...MATERIAL_PRICES },
     referenceMaterial: REFERENCE_MATERIAL,
     ourDies: [],
   };
@@ -54,9 +52,9 @@ type RemoteDefaults = {
     >;
   };
   cardTypes?: Array<{
-    id: string;
-    label: string;
-    costPerSqM: number;
+    id?: string;
+    label?: string;
+    costPerSqM?: number;
     isReference?: boolean;
   }>;
   ourDies?: Array<{
@@ -101,22 +99,52 @@ function normalizeTiers(
   return base;
 }
 
-export function pricingFromRemote(data: RemoteDefaults): LivePricingConfig {
-  const materials = { ...MATERIAL_PRICES };
-  let referenceMaterial: MaterialId = REFERENCE_MATERIAL;
-  if (Array.isArray(data.cardTypes)) {
-    for (const id of ["t22", "t23", "t24"] as MaterialId[]) {
-      const row = data.cardTypes.find((c) => c.id === id);
-      if (row) {
-        materials[id] = {
-          label: row.label || materials[id].label,
-          costPerSqM: Number(row.costPerSqM),
-          isReference: !!row.isReference,
-        };
-        if (row.isReference) referenceMaterial = id;
-      }
-    }
+function normalizeMaterials(
+  cardTypes: RemoteDefaults["cardTypes"],
+): { materials: Record<string, MaterialInfo>; referenceMaterial: MaterialId } {
+  if (!Array.isArray(cardTypes) || cardTypes.length === 0) {
+    return { materials: { ...MATERIAL_PRICES }, referenceMaterial: REFERENCE_MATERIAL };
   }
+
+  const materials: Record<string, MaterialInfo> = {};
+  let referenceMaterial: MaterialId | null = null;
+  let firstId: MaterialId | null = null;
+
+  for (const row of cardTypes) {
+    const id = String(row?.id ?? "").trim();
+    if (!id) continue;
+    if (!firstId) firstId = id;
+    materials[id] = {
+      label: String(row?.label || id),
+      costPerSqM: Number(row?.costPerSqM ?? 0),
+      isReference: !!row?.isReference,
+    };
+    if (row?.isReference) referenceMaterial = id;
+  }
+
+  if (!Object.keys(materials).length) {
+    return { materials: { ...MATERIAL_PRICES }, referenceMaterial: REFERENCE_MATERIAL };
+  }
+
+  return {
+    materials,
+    referenceMaterial: referenceMaterial || firstId || REFERENCE_MATERIAL,
+  };
+}
+
+/** Ordered catalog entries for UI select. */
+export function materialsListFromPricing(
+  pricing: LivePricingConfig,
+): Array<{ id: string; label: string; isReference?: boolean }> {
+  return Object.entries(pricing.materials).map(([id, info]) => ({
+    id,
+    label: info.label,
+    isReference: info.isReference,
+  }));
+}
+
+export function pricingFromRemote(data: RemoteDefaults): LivePricingConfig {
+  const { materials, referenceMaterial } = normalizeMaterials(data.cardTypes);
   return {
     vat: data.vat ?? VAT_PERCENT,
     minL: data.minL ?? MIN_DIMS.minL,

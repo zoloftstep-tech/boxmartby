@@ -88,8 +88,8 @@ export function validateItem(item: PricingInput, pricing: LivePricingConfig = lo
   if (category !== "fourFlap" && category !== "selfLock" && category !== "ourDies") {
     return "category: ожидается fourFlap, selfLock или ourDies";
   }
-  if (material !== "t22" && material !== "t23" && material !== "t24") {
-    return "material: ожидается t22, t23 или t24";
+  if (!material || typeof material !== "string" || !pricing.materials[material]) {
+    return "material: неизвестная марка картона";
   }
 
   if (category === "ourDies") {

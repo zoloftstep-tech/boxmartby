@@ -9,7 +9,14 @@
 
 export type PricingTierCategory = "fourFlap" | "selfLock";
 export type BoxCategory = PricingTierCategory | "ourDies";
-export type MaterialId = "t22" | "t23" | "t24";
+/** Cardboard grade id from BoxCalc cardTypes (e.g. t22, e). */
+export type MaterialId = string;
+
+export type MaterialInfo = {
+  label: string;
+  costPerSqM: number;
+  isReference?: boolean;
+};
 
 export type OurDie = {
   id: string;
@@ -42,10 +49,7 @@ export type AreaSurchargeRule = {
  * 1. MATERIAL_PRICES — стоимость марки картона, BYN за м² (без НДС)
  *    Эталон (isReference) = Т-23: разница (цена_марки − эталон) входит в цену шт.
  * --------------------------------------------------------------------------- */
-export const MATERIAL_PRICES: Record<
-  MaterialId,
-  { label: string; costPerSqM: number; isReference?: boolean }
-> = {
+export const MATERIAL_PRICES: Record<string, MaterialInfo> = {
   t22: { label: "Т-22", costPerSqM: 0.82 },
   t23: { label: "Т-23", costPerSqM: 0.87, isReference: true },
   t24: { label: "Т-24", costPerSqM: 0.95 },

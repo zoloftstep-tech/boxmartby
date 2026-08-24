@@ -8,6 +8,7 @@ export {
   VAT_PERCENT,
   type BoxCategory,
   type MaterialId,
+  type MaterialInfo,
   type OurDie,
   type PricingTierCategory,
 } from "./pricing-config";
