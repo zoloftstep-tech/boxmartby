@@ -6,6 +6,7 @@ export async function GET() {
   const res = NextResponse.json({
     ourDies: pricing.ourDies,
     materials: materialsListFromPricing(pricing),
+    blankTypes: pricing.blankTypes,
   });
   res.headers.set("X-Pricing-Source", source);
   return res;

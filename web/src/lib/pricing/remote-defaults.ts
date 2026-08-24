@@ -12,6 +12,11 @@ import {
   type PricingTierCategory,
   type QtyTier,
 } from "./pricing-config";
+import {
+  FEFCO_TYPE_CATALOG,
+  type BlankTypeMeta,
+  type FefcoPricingCategory,
+} from "./fefco-catalog";
 
 export type LivePricingConfig = {
   vat: number;
@@ -23,7 +28,16 @@ export type LivePricingConfig = {
   materials: Record<string, MaterialInfo>;
   referenceMaterial: MaterialId;
   ourDies: OurDie[];
+  blankTypes: BlankTypeMeta[];
 };
+
+function defaultBlankTypes(): BlankTypeMeta[] {
+  return FEFCO_TYPE_CATALOG.map((t) => ({
+    id: t.id,
+    name: t.name,
+    category: t.category,
+  }));
+}
 
 export function localPricingConfig(): LivePricingConfig {
   return {
@@ -36,6 +50,7 @@ export function localPricingConfig(): LivePricingConfig {
     materials: { ...MATERIAL_PRICES },
     referenceMaterial: REFERENCE_MATERIAL,
     ourDies: [],
+    blankTypes: defaultBlankTypes(),
   };
 }
 
@@ -65,7 +80,27 @@ type RemoteDefaults = {
     B?: number;
     H?: number;
   }>;
+  blankTypes?: Array<{
+    id?: string;
+    name?: string;
+    category?: string;
+  }>;
 };
+
+function normalizeBlankTypes(raw: RemoteDefaults["blankTypes"]): BlankTypeMeta[] {
+  if (!Array.isArray(raw) || !raw.length) return defaultBlankTypes();
+  const out: BlankTypeMeta[] = [];
+  const seen = new Set<string>();
+  for (const row of raw) {
+    const id = String(row?.id ?? "").trim();
+    const name = String(row?.name ?? "").trim();
+    const category = (row?.category === "fourFlap" ? "fourFlap" : "selfLock") as FefcoPricingCategory;
+    if (!id || !name || seen.has(id)) continue;
+    seen.add(id);
+    out.push({ id, name, category });
+  }
+  return out.length ? out : defaultBlankTypes();
+}
 
 function normalizeOurDies(raw: RemoteDefaults["ourDies"]): OurDie[] {
   if (!Array.isArray(raw)) return [];
@@ -155,6 +190,7 @@ export function pricingFromRemote(data: RemoteDefaults): LivePricingConfig {
     materials,
     referenceMaterial,
     ourDies: normalizeOurDies(data.ourDies),
+    blankTypes: normalizeBlankTypes(data.blankTypes),
   };
 }
 

@@ -9,14 +9,17 @@ import {
   type PricingTierCategory,
   type QtyTier,
 } from "./pricing-config";
-import { blankAreaForFormula, defaultFormulaForCategory, isFormulaForCategory } from "./fefco-formulas";
+import { blankAreaForFormula, defaultFormulaForCategory } from "./fefco-formulas";
+import { isBuiltinFormulaForCategory, isKnownBlankTypeId } from "./fefco-catalog";
 import { localPricingConfig, type LivePricingConfig } from "./remote-defaults";
+import { dimWarningsForItem } from "./dim-warnings";
 
+export { dimWarningsForItem };
 export type PricingInput = CalcItemInput;
 
 function blankAreaFourFlap(A: number, B: number, H: number, formulaTypeId?: string): number {
   const id =
-    formulaTypeId && isFormulaForCategory(formulaTypeId, "fourFlap")
+    formulaTypeId && isBuiltinFormulaForCategory(formulaTypeId, "fourFlap")
       ? formulaTypeId
       : defaultFormulaForCategory("fourFlap");
   return blankAreaForFormula(id, A, B, H);
@@ -24,7 +27,7 @@ function blankAreaFourFlap(A: number, B: number, H: number, formulaTypeId?: stri
 
 function blankAreaSelfLock(A: number, B: number, H: number, formulaTypeId?: string): number {
   const id =
-    formulaTypeId && isFormulaForCategory(formulaTypeId, "selfLock")
+    formulaTypeId && isBuiltinFormulaForCategory(formulaTypeId, "selfLock")
       ? formulaTypeId
       : defaultFormulaForCategory("selfLock");
   return blankAreaForFormula(id, A, B, H);
@@ -109,7 +112,7 @@ export function validateItem(item: PricingInput, pricing: LivePricingConfig = lo
     if (
       item.formulaTypeId &&
       (category === "fourFlap" || category === "selfLock") &&
-      !isFormulaForCategory(item.formulaTypeId, category)
+      !isKnownBlankTypeId(item.formulaTypeId, category, pricing.blankTypes)
     ) {
       return "formulaTypeId: не соответствует категории";
     }
@@ -123,29 +126,6 @@ export function validateItem(item: PricingInput, pricing: LivePricingConfig = lo
   }
 
   return null;
-}
-
-/** Предупреждения по порогам размеров — только четырёхклапанные, без блокировки. */
-export function dimWarningsForItem(
-  item: Pick<PricingInput, "length" | "width" | "height" | "category">,
-  mins: { minL: number; minW: number; minWH: number } = {
-    minL: 240,
-    minW: 80,
-    minWH: 280,
-  },
-): string[] {
-  if (item.category !== "fourFlap") return [];
-  const A = item.length;
-  const B = item.width;
-  const H = item.height;
-  if (![A, B, H].every((n) => Number.isFinite(n) && n > 0)) return [];
-  const warn: string[] = [];
-  if (A < mins.minL) warn.push(`Длина меньше рекомендуемого минимума ${mins.minL} мм`);
-  if (B < mins.minW) warn.push(`Ширина меньше рекомендуемого минимума ${mins.minW} мм`);
-  if (B + H < mins.minWH) {
-    warn.push(`Сумма ширины и высоты меньше рекомендуемого минимума ${mins.minWH} мм (сейчас ${B + H})`);
-  }
-  return warn;
 }
 
 /**
@@ -164,7 +144,7 @@ export function calculateItem(
   const resolvedFormulaId =
     category === "ourDies"
       ? die?.formulaTypeId || "fefco_0409"
-      : formulaTypeId && isFormulaForCategory(formulaTypeId, category)
+      : formulaTypeId && isKnownBlankTypeId(formulaTypeId, category, pricing.blankTypes)
         ? formulaTypeId
         : defaultFormulaForCategory(category);
   const rawArea = blankArea(category, A, B, H, formulaTypeId);

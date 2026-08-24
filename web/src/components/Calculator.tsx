@@ -21,15 +21,16 @@ import type {
 import {
   defaultFormulaForCategory,
   dimWarningsForItem,
-  fefcoTypesForCategory,
+  blankTypesForCategory,
   MATERIAL_PRICES,
   MIN_DIMS,
   REFERENCE_MATERIAL,
+  type BlankTypeMeta,
 } from "@/lib/pricing";
 import { IconClose, IconPlus, IconTrash } from "./icons";
 
-const SELF_LOCK_FEFCO_TYPES = fefcoTypesForCategory("selfLock");
 const DEFAULT_SELF_LOCK_FORMULA = defaultFormulaForCategory("selfLock");
+const FALLBACK_SELF_LOCK_TYPES = blankTypesForCategory(undefined, "selfLock");
 
 const FALLBACK_MATERIALS: CatalogMaterial[] = Object.entries(MATERIAL_PRICES).map(
   ([id, info]) => ({
@@ -152,6 +153,7 @@ export function Calculator() {
   const [modalOpen, setModalOpen] = useState(false);
   const [ourDies, setOurDies] = useState<OurDie[]>([]);
   const [materials, setMaterials] = useState<CatalogMaterial[]>(FALLBACK_MATERIALS);
+  const [blankTypes, setBlankTypes] = useState<BlankTypeMeta[]>(FALLBACK_SELF_LOCK_TYPES);
   const seq = useRef(0);
 
   useEffect(() => {
@@ -165,11 +167,14 @@ export function Calculator() {
             ? data.materials
             : FALLBACK_MATERIALS;
         setMaterials(nextMaterials);
+        const nextBlank = blankTypesForCategory(data.blankTypes, "selfLock");
+        setBlankTypes(nextBlank.length ? nextBlank : FALLBACK_SELF_LOCK_TYPES);
       })
       .catch(() => {
         if (cancelled) return;
         setOurDies([]);
         setMaterials(FALLBACK_MATERIALS);
+        setBlankTypes(FALLBACK_SELF_LOCK_TYPES);
       });
     return () => {
       cancelled = true;
@@ -423,7 +428,7 @@ export function Calculator() {
                         onChange={(e) => updateFormulaType(item.id, e.target.value)}
                         className="focus-ring mt-1.5 w-full cursor-pointer rounded-md border border-line bg-white px-3 py-2.5 text-sm text-ink"
                       >
-                        {SELF_LOCK_FEFCO_TYPES.map((t) => (
+                        {blankTypes.map((t) => (
                           <option key={t.id} value={t.id}>
                             {t.name}
                           </option>

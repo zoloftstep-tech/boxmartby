@@ -2,7 +2,7 @@
 
 **Назначение:** единый контекст для людей и AI-агентов. Читать перед правками цен, заказов, Telegram, env, деплоя.  
 **Копии:** одинаковый файл лежит в **обоих** репозиториях (`boxmartby` и `boxcalculator`). При правке — обновить обе копии в одном PR/сессии.  
-**Дата актуализации:** 2026-08-11  
+**Дата актуализации:** 2026-08-24  
 **Не коммитить:** `.env.local`, секреты, `.vercel/` project tokens.
 
 ---
@@ -27,7 +27,8 @@ Root Directory на Vercel у Site, BoxCalc и CRM: **`web`**.
 
 | Домен | SoT | Комментарий |
 |-------|-----|-------------|
-| **Цены / тарифы / ourDies для сайта** | BoxCalc `org_settings` после **Publish** | Сайт читает `/api/defaults` и проксирует `/api/calculate` |
+| **Цены / тарифы / ourDies / blankTypes (meta) для сайта** | BoxCalc `org_settings` после **Publish** | Сайт: `/api/defaults` → `blankTypes[{id,name,category}]` **без формул**; расчёт — `/api/calculate` |
+| **Формулы развёртки (customTypes, overrides)** | BoxCalc `org_settings` (только сервер + SPA менеджеров) | **Не** публикуются в `/api/defaults`. Клиент сайта формул не получает |
 | **Формула FEFCO 0201 (геометрия)** | BoxCalc `web/src/lib/calc/fefco-0201.ts` | В SPA попадает через `npm run sync:fefco` → `public/calc/fefco-0201.js` |
 | **Локальный fallback цен на сайте** | Site `web/src/lib/pricing/*` | Используется если BoxCalc недоступен или нет env |
 | **Статусы заказов** | **CRM** | Не полагаться на Telegram inline-кнопки сайта как на SoT |
@@ -72,6 +73,14 @@ cd web && npm test
 ### Пустые ourDies на сайте
 
 Обычно: нет env defaults, или в org не опубликованы dies, или смотрите старый кэш (до 60 с). Не «чинить» каталог правкой только локального `pricing-config.ts` — publish org.
+
+### Новый тип развёртки на сайте
+
+1. В BoxCalc → Настройки → Типы развёртки: добавить пользовательский тип (формулы) **или** системный FEFCO в коде.
+2. **Сохранить** → **Применить для всех** (publish org).
+3. Сайт через `live-catalog` получает только `{ id, name, category }` в `blankTypes`.
+4. Цена считается через BoxCalc `/api/calculate` (формулы остаются на сервере).
+5. Если BoxCalc calculate недоступен — custom тип даёт 503 на сайте; builtin FEFCO может идти local-fallback.
 
 ### FEFCO sync
 

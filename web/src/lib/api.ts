@@ -6,6 +6,7 @@ import type {
   OrderResponse,
   OurDie,
 } from "./types";
+import type { BlankTypeMeta } from "./pricing/fefco-catalog";
 
 export async function calculateQuote(items: CalcItemInput[]): Promise<CalcResponse> {
   const res = await fetch("/api/calculate", {
@@ -25,12 +26,17 @@ export async function calculateQuote(items: CalcItemInput[]): Promise<CalcRespon
 export async function fetchLiveCatalog(): Promise<{
   ourDies: OurDie[];
   materials: CatalogMaterial[];
+  blankTypes: BlankTypeMeta[];
 }> {
   const res = await fetch("/api/live-catalog", { cache: "no-store" });
   if (!res.ok) {
     throw new Error("Не удалось загрузить каталог штанцформ");
   }
-  return res.json() as Promise<{ ourDies: OurDie[]; materials: CatalogMaterial[] }>;
+  return res.json() as Promise<{
+    ourDies: OurDie[];
+    materials: CatalogMaterial[];
+    blankTypes: BlankTypeMeta[];
+  }>;
 }
 
 export async function submitOrder(payload: OrderRequest): Promise<OrderResponse> {

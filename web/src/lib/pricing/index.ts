@@ -1,3 +1,7 @@
+/**
+ * Client-safe pricing surface — no FEFCO formula bodies.
+ * Server routes must import calculate.ts / fefco-formulas.ts directly.
+ */
 export {
   AREA_SURCHARGE,
   CATEGORY_LABELS,
@@ -13,18 +17,17 @@ export {
   type PricingTierCategory,
 } from "./pricing-config";
 
-export { blankAreaForFormula, resolveFefcoFormula, FEFCO_TYPE_CATALOG, fefcoTypesForCategory, defaultFormulaForCategory, isFormulaForCategory } from "./fefco-formulas";
-export type { FefcoTypeMeta, FefcoPricingCategory } from "./fefco-formulas";
-
 export {
-  areaSurchargeFor,
-  blankArea,
-  calculateItem,
-  calculateItems,
-  dimWarningsForItem,
-  findDie,
-  resolveItemDims,
-  tierCategoryId,
-  tierForQty,
-  validateItem,
-} from "./calculate";
+  FEFCO_TYPE_CATALOG,
+  fefcoTypesForCategory,
+  defaultFormulaForCategory,
+  isFormulaForCategory,
+  isBuiltinFormulaForCategory,
+  blankTypesForCategory,
+  isKnownBlankTypeId,
+  type FefcoTypeMeta,
+  type FefcoPricingCategory,
+  type BlankTypeMeta,
+} from "./fefco-catalog";
+
+export { dimWarningsForItem } from "./dim-warnings";

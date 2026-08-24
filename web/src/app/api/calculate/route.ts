@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { calculateItems, validateItem } from "@/lib/pricing";
+import { calculateItems, validateItem } from "@/lib/pricing/calculate";
+import { isBuiltinFormulaId } from "@/lib/pricing/fefco-formulas";
 import { getLivePricingConfig } from "@/lib/pricing/remote-defaults";
 import type { CalcItemInput, CalcRequest, CalcResponse } from "@/lib/types";
 
@@ -90,6 +91,23 @@ export async function POST(req: NextRequest) {
     } catch (e) {
       console.error("BoxCalc calculate proxy error, using local fallback", e);
     }
+  }
+
+  // Custom blank types (not builtin FEFCO) require BoxCalc — do not guess area locally.
+  const needsRemoteFormula = items.some((it) => {
+    if (it.category === "ourDies") {
+      const die = pricing.ourDies.find((d) => d.id === it.dieId);
+      const fid = die?.formulaTypeId;
+      return !!(fid && !isBuiltinFormulaId(fid));
+    }
+    const id = it.formulaTypeId;
+    return !!(id && !isBuiltinFormulaId(id));
+  });
+  if (needsRemoteFormula) {
+    return NextResponse.json(
+      { error: "Расчёт для пользовательского типа развёртки временно недоступен. Попробуйте позже." },
+      { status: 503 },
+    );
   }
 
   const pricingSource = source === "remote" ? "local-fallback" : "local";
