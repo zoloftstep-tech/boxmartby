@@ -174,7 +174,20 @@ curl -s -D- "https://YOUR-SITE/api/live-catalog" -o /dev/null | grep -i X-Pricin
 
 # Health (defaults + calculate returns price + ingest expect 401)
 curl -sS "https://YOUR-SITE/api/health" | jq .
+# Ожидание: HTTP 200 и "ok": true. Внешний uptime-монитор — только этот URL (без секретов в ответе).
 ```
+
+### Мониторинг и фильтры Vercel (Phase F)
+
+| Где | Что | Фильтр логов |
+|-----|-----|----------------|
+| Site | Health down / upstream fail | `[health]` |
+| Site | Цены не с BoxCalc | `[pricing]` (`source=local-fallback` / `source=local`) |
+| Site | Заявка не ушла в CRM | `[submit-order]` |
+| CRM | Ingest 401/500/400 | `[ingest] unauthorized` / `misconfigured` / `bad_request` |
+| CRM | Нет снимков FEFCO | `[ingest] BOXCALC_* missing` |
+
+**Post-deploy smoke (Phase F):** `GET /api/health` → 200 + `ok: true`; `POST` CRM `/api/ingest/site` с `Authorization: Bearer wrong` → **401**, в логах CRM `[ingest] unauthorized`, **без** нового BM.
 
 Локально перед пушем: `cd web && npm test` в затронутом репо.
 
@@ -229,6 +242,7 @@ curl -sS "https://YOUR-SITE/api/health" | jq .
 | 2026-08-25 | Site Idempotency-Key: client UUID per attempt + server body-hash fallback | Phase B; убран `randomUUID` на каждый POST; double-click/retry не плодят BM |
 | 2026-08-25 | Site `GET /api/health` + OPS Site↔BoxCalc sync | Phase C; ping defaults/calculate/ingest(401); email wording «после CRM»; live-catalog smoke = GET |
 | 2026-08-25 | Site ESLint flat config (`eslint.config.mjs` + `lint: eslint`) | Phase E; неинтерактивный lint как CRM/BoxCalc; без split Calculator/Optopak |
+| 2026-08-25 | Soft observability: `[pricing]`/`[ingest]` tags + health uptime doc | Phase F; без Sentry/admin banner; контракты API не менялись |
 
 ---
 
@@ -247,6 +261,7 @@ curl -sS "https://YOUR-SITE/api/health" | jq .
 - [x] Стабильный Idempotency-Key на Site (2026-08-25, Phase B): client key + server body-hash; `test:idempotency`
 - [x] Лёгкий health env на Site (2026-08-25, Phase C): `GET /api/health`; `test:health`; OPS sync sheetFormats/layout
 - [x] Site ESLint flat config (2026-08-25, Phase E): `eslint.config.mjs`; `npm run lint` без prompt
+- [x] Soft observability (2026-08-25, Phase F): Vercel log tags + health ping checklist
 
 ### Дальше (по приоритету)
 

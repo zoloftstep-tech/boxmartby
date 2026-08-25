@@ -206,7 +206,7 @@ export async function getLivePricingConfig(): Promise<{
   const url = process.env.CALCULATOR_DEFAULTS_URL;
   const key = process.env.CALCULATOR_DEFAULTS_API_KEY;
   if (!url || !key) {
-    console.warn("CALCULATOR_DEFAULTS_URL/API_KEY not set, using local pricing-config");
+    console.warn("[pricing] CALCULATOR_DEFAULTS_URL/API_KEY not set, using local pricing-config");
     return { pricing: localPricingConfig(), source: "local" };
   }
 
@@ -225,7 +225,7 @@ export async function getLivePricingConfig(): Promise<{
     cache = { at: Date.now(), value, source: "remote" };
     return { pricing: value, source: "remote" };
   } catch (e) {
-    console.error("CALCULATOR_DEFAULTS fetch failed, using local", e);
+    console.error("[pricing] CALCULATOR_DEFAULTS fetch failed, using local", e);
     return { pricing: localPricingConfig(), source: "local" };
   }
 }

@@ -37,7 +37,7 @@ async function proxyToBoxCalc(
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    console.error("BoxCalc calculate proxy failed", res.status, text.slice(0, 200));
+    console.error("[pricing] BoxCalc calculate proxy failed", res.status, text.slice(0, 200));
     return null;
   }
   return (await res.json()) as CalcResponse;
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
         return res;
       }
     } catch (e) {
-      console.error("BoxCalc calculate proxy error, using local fallback", e);
+      console.error("[pricing] BoxCalc calculate proxy error, using local fallback", e);
     }
   }
 
@@ -113,11 +113,11 @@ export async function POST(req: NextRequest) {
   const pricingSource = source === "remote" ? "local-fallback" : "local";
   if (pricingSource === "local-fallback") {
     console.warn(
-      "calculate: using local-fallback (BoxCalc /api/calculate unavailable or misconfigured)",
+      "[pricing] source=local-fallback (BoxCalc /api/calculate unavailable or misconfigured)",
     );
   } else if (pricingSource === "local") {
     console.warn(
-      "calculate: using local pricing (CALCULATOR_DEFAULTS_URL/API_KEY or calculate URL not set)",
+      "[pricing] source=local (CALCULATOR_DEFAULTS_URL/API_KEY or calculate URL not set)",
     );
   }
   const res = NextResponse.json(calculateItems(items, pricing));
