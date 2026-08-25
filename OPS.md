@@ -207,7 +207,7 @@ curl -sS -H "Authorization: Bearer $CRON_SECRET" \
 # При fail: ok:false + сообщение в TELEGRAM_CHAT_ID (без кнопок статуса заказа).
 ```
 
-Расписание Vercel: `0 */6 * * *` → `/api/cron/pricing-contract`.
+Расписание Vercel (Hobby: не чаще 1×/сутки): `0 6 * * *` UTC (= 09:00 Минск) → `/api/cron/pricing-contract`.
 
 Локально перед пушем: `cd web && npm test` в затронутом репо.
 
@@ -266,7 +266,7 @@ curl -sS -H "Authorization: Bearer $CRON_SECRET" \
 | 2026-08-25 | Site `GET /api/health` + OPS Site↔BoxCalc sync | Phase C; ping defaults/calculate/ingest(401); email wording «после CRM»; live-catalog smoke = GET |
 | 2026-08-25 | Site ESLint flat config (`eslint.config.mjs` + `lint: eslint`) | Phase E; неинтерактивный lint как CRM/BoxCalc; без split Calculator/Optopak |
 | 2026-08-25 | Soft observability: `[pricing]`/`[ingest]` tags + health uptime doc | Phase F; без Sentry/admin banner; контракты API не менялись |
-| 2026-08-25 | Site contract calculate + cron TG alert | Phase G; shape/finite/`remote`; cron 6h; без жёсткого 0.24 |
+| 2026-08-25 | Site contract calculate + cron TG alert | Phase G; shape/finite/`remote`; cron daily `0 6 * * *` UTC (Hobby); без жёсткого 0.24 |
 
 ---
 
