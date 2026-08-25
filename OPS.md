@@ -2,7 +2,7 @@
 
 **Назначение:** единый контекст для людей и AI-агентов. Читать перед правками цен, заказов, Telegram, env, деплоя.  
 **Копии:** одинаковый файл лежит в **обоих** репозиториях (`boxmartby` и `boxcalculator`). При правке — обновить обе копии в одном PR/сессии.  
-**Дата актуализации:** 2026-08-24  
+**Дата актуализации:** 2026-08-25  
 **Не коммитить:** `.env.local`, секреты, `.vercel/` project tokens.
 
 ---
@@ -126,13 +126,25 @@ cd web && npm test
 - `/api/optopak-webhook` — парсер Оптопак на сайте
 - гайд менеджеров: `web/docs/optopak-manager-guide.md`
 
-**Перед удалением:** `getWebhookInfo` для обоих ботов — куда реально смотрит prod.  
 Cutover парсера на CRM описан в Site `DEPLOY.md` (URL `…/api/telegram/optopak` на CRM).
+
+### Cutover status (2026-08-25)
+
+Аудит: `getWebhookInfo` (токены Site = CRM; `setWebhook` не вызывался).
+
+| Бот | Webhook URL | pending | last_error |
+|-----|-------------|---------|------------|
+| Notify (`TELEGRAM_BOT_TOKEN`) | `https://boxmartby.vercel.app/api/telegram/webhook` (`allowed_updates`: `callback_query`) | 0 | — |
+| Parser (`TELEGRAM_PARSER_BOT_TOKEN`) | `https://boxmart-crm.vercel.app/api/telegram/optopak` (`message`, `callback_query`) | 0 | — |
+
+- **Вердикт:** `parser_on_crm`
+- **Legacy Site code:** `keep` (удаление — только отдельная P2-сессия)
+- **Gate:** удаление `/api/optopak-webhook` и `/api/telegram/webhook` на Site разрешено планировать только при `parser_on_crm` (сейчас выполнено); notify status webhook на Site — legacy, не SoT статусов
 
 ### Инструкции менеджерам (актуальное поведение)
 
 - Пробел перед «шт» желателен для людей; код эвристики принимает и `40шт`, и `40 шт` — сбои чаще от LLM/Perplexity, не от жёсткого regex пробела.
-- Статусы вести в **CRM**, не через старые Telegram-кнопки сайта (если cutover завершён).
+- Статусы вести в **CRM**, не через старые Telegram-кнопки сайта (cutover парсера на CRM подтверждён 2026-08-25).
 
 ---
 
@@ -204,6 +216,8 @@ curl -s -D- -X POST "https://YOUR-SITE/api/live-catalog" -o /dev/null | grep -i 
 | 2026 | Optopak «40шт» — править **инструкции**, не эвристику парсера | Эвристика уже допускает оба варианта; шум от LLM |
 | 2026 | Не npm-пакет pricing / не очереди / не унификация ORM | Масштаб не оправдывает; см. бриф Perplexity §9 |
 | 2026-08-11 | Добавлены golden tests + FEFCO sync guard + warn `local-fallback` | Коммиты BoxCalc `fc00d84`, Site `929fb82` |
+| 2026-08-25 | Prod webhook audit: parser → CRM; notify status → Site legacy | `getWebhookInfo`; вердикт `parser_on_crm`; `setWebhook` не вызывался; legacy Site code `keep` до P2 |
+| 2026-08-25 | Site Idempotency-Key: client UUID per attempt + server body-hash fallback | Phase B; убран `randomUUID` на каждый POST; double-click/retry не плодят BM |
 
 ---
 
@@ -218,10 +232,12 @@ curl -s -D- -X POST "https://YOUR-SITE/api/live-catalog" -o /dev/null | grep -i 
 - [x] Warn в логах при `local-fallback` / `local`
 - [x] Фикс баннера у суперадмина после publish
 - [x] Этот OPS.md
+- [x] Аудит Telegram webhooks (2026-08-25): parser → CRM (`parser_on_crm`); notify status → Site legacy
+- [x] Стабильный Idempotency-Key на Site (2026-08-25, Phase B): client key + server body-hash; `test:idempotency`
 
 ### Дальше (по приоритету)
 
-- [ ] **Аудит Telegram webhooks** (оба бота → `getWebhookInfo`) → план удаления legacy с Site
+- [ ] План удаления legacy TG/Optopak с Site (P2; gate `parser_on_crm` выполнен; код пока `keep`)
 - [ ] Лёгкий **health** env (defaults/calculate/ingest ping, без утечки секретов)
 - [ ] Contract-тест Site remote vs BoxCalc в CI (сейчас unit на defaults seed)
 - [ ] Cron / дозаполнение CRM snapshots при сбое синхронного ingest (если будет боль)
@@ -233,7 +249,7 @@ curl -s -D- -X POST "https://YOUR-SITE/api/live-catalog" -o /dev/null | grep -i 
 - Вынос pricing в отдельный microservice / npm package «ради чистоты»
 - Очереди / CQRS / event bus под текущий объём
 - Унификация ORM Site ↔ BoxCalc ↔ CRM
-- Удаление Telegram/Optopak кода на сайте **до** проверки webhook
+- Удаление Telegram/Optopak кода на сайте **без** отдельного P2-согласования (audit 2026-08-25: `parser_on_crm`)
 - Широкий рефакторинг парсера под один кейс LLM
 
 ---

@@ -39,10 +39,19 @@ export async function fetchLiveCatalog(): Promise<{
   }>;
 }
 
-export async function submitOrder(payload: OrderRequest): Promise<OrderResponse> {
+export async function submitOrder(
+  payload: OrderRequest,
+  opts?: { idempotencyKey?: string },
+): Promise<OrderResponse> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  const key = opts?.idempotencyKey?.trim();
+  if (key) headers["Idempotency-Key"] = key;
+
   const res = await fetch("/api/submit-order", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(payload),
   });
 

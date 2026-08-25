@@ -9,7 +9,8 @@
     "lint": "next lint",
     "test:pricing": "tsx scripts/test-pricing-golden.ts",
     "test:blank-types": "tsx scripts/test-blank-types-catalog.ts",
-    "test": "npm run test:pricing && npm run test:blank-types"
+    "test:idempotency": "tsx scripts/test-idempotency-key.ts",
+    "test": "npm run test:pricing && npm run test:blank-types && npm run test:idempotency"
   },
   "dependencies": {
     "next": "^15.3.0",

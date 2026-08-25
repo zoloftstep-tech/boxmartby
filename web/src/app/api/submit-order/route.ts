@@ -1,10 +1,10 @@
-import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import {
   buildMessageText,
   isAllowedOrigin,
   sendEmailNotification,
 } from "@/lib/notifications";
+import { buildSiteIdempotencyKey } from "@/lib/idempotency";
 import type { OrderRequest, OrderResponse } from "@/lib/types";
 
 type CrmIngestResponse = {
@@ -85,9 +85,10 @@ export async function POST(req: NextRequest) {
 
   const { personalDataConsent: _consent, ...crmOrder } = order;
 
-  const idempotencyKey =
-    req.headers.get("idempotency-key")?.trim() || `site:${randomUUID()}`;
-
+  const idempotencyKey = buildSiteIdempotencyKey(
+    req.headers.get("idempotency-key"),
+    crmOrder,
+  );
   let order_id: string;
   try {
     order_id = await ingestToCrm(crmOrder, idempotencyKey);

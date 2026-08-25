@@ -611,6 +611,8 @@ function OrderModal({
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const firstFieldRef = useRef<HTMLInputElement>(null);
+  const idempotencyKeyRef = useRef<string | null>(null);
+  const inFlightRef = useRef(false);
 
   useEffect(() => {
     firstFieldRef.current?.focus();
@@ -628,6 +630,7 @@ function OrderModal({
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (inFlightRef.current) return;
     setFormError(null);
 
     if (!name.trim()) {
@@ -648,23 +651,32 @@ function OrderModal({
       return;
     }
 
+    if (!idempotencyKeyRef.current) {
+      idempotencyKeyRef.current = `site:${crypto.randomUUID()}`;
+    }
+    inFlightRef.current = true;
     setSubmitting(true);
     try {
-      await submitOrder({
-        name: name.trim(),
-        phone: e164,
-        email: email.trim() || undefined,
-        comment: comment.trim() || undefined,
-        personalDataConsent: true,
-        items: results,
-        summary: {
-          total_no_vat: summary.total_no_vat,
-          total_with_vat: summary.total_with_vat,
+      await submitOrder(
+        {
+          name: name.trim(),
+          phone: e164,
+          email: email.trim() || undefined,
+          comment: comment.trim() || undefined,
+          personalDataConsent: true,
+          items: results,
+          summary: {
+            total_no_vat: summary.total_no_vat,
+            total_with_vat: summary.total_with_vat,
+          },
         },
-      });
+        { idempotencyKey: idempotencyKeyRef.current },
+      );
+      idempotencyKeyRef.current = null;
       router.push("/spasibo");
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Не удалось отправить");
+      inFlightRef.current = false;
       setSubmitting(false);
     }
   }
