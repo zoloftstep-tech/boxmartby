@@ -262,6 +262,8 @@ curl -sS -H "Authorization: Bearer $CRON_SECRET" \
 | 2026-08-25 | Soft observability: `[pricing]`/`[ingest]` tags + health uptime doc | Phase F; без Sentry/admin banner; контракты API не менялись |
 | 2026-08-25 | Site contract calculate + cron TG alert | Phase G; shape/finite/`remote`; cron daily `0 6 * * *` UTC (Hobby); без жёсткого 0.24 |
 | 2026-08-25 | Removed Site legacy Optopak + status webhook | Phase H; gate `parser_on_crm` re-checked; notify deleteWebhook after deploy |
+| 2026-08-25 | Site Phase I.2 — split `Calculator.tsx` | draft helpers + Form/Results/OrderModal; calculate/ingest contracts unchanged |
+| 2026-08-25 | CRM Phase I.1 — split `actions/orders.ts` | barrel + read/write/status/production/shared; BoxCalc SPA split deferred |
 
 ---
 
@@ -283,6 +285,7 @@ curl -sS -H "Authorization: Bearer $CRON_SECRET" \
 - [x] Soft observability (2026-08-25, Phase F): Vercel log tags + health ping checklist
 - [x] Contract Site↔BoxCalc + TG cron (2026-08-25, Phase G): `test:contract-calculate`; `/api/cron/pricing-contract`
 - [x] Удаление legacy TG/Optopak с Site (2026-08-25, Phase H)
+- [x] Phase I hotspots min-risk (2026-08-25): CRM orders.ts split + Site Calculator split; BoxCalc SPA deferred
 
 ### Дальше (по приоритету)
 
