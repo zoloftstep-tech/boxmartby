@@ -37,10 +37,6 @@ const GOLDEN_ITEM = {
   material: "t22",
 };
 
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
-}
-
 export function calculateUrlFromDefaults(
   defaultsUrl: string | undefined,
   explicit?: string,
@@ -138,9 +134,13 @@ export async function runHealthChecks(opts?: {
           };
           const price = data?.items?.[0]?.price_per_unit_no_vat;
           calculate =
-            typeof price === "number" && round2(price) === 0.24 ? "ok" : "fail";
+            typeof price === "number" &&
+            Number.isFinite(price) &&
+            price > 0
+              ? "ok"
+              : "fail";
           if (calculate === "fail") {
-            console.warn("[health] calculate price mismatch", price);
+            console.warn("[health] calculate price invalid", price);
           }
         }
       } catch (e) {

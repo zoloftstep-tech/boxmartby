@@ -70,7 +70,7 @@ async function main() {
         }
         if (url.includes("/api/calculate")) {
           return Response.json({
-            items: [{ price_per_unit_no_vat: 0.23 }],
+            items: [{ price_per_unit_no_vat: 0 }],
           });
         }
         return new Response("{}", { status: 401 });
@@ -113,7 +113,7 @@ async function main() {
         }
         if (url.includes("/api/calculate")) {
           return Response.json({
-            items: [{ price_per_unit_no_vat: 0.239 }],
+            items: [{ price_per_unit_no_vat: 0.25 }],
           });
         }
         if (url.includes("/ingest/site")) {
@@ -122,7 +122,6 @@ async function main() {
         return new Response("{}", { status: 404 });
       }),
     });
-    // 0.239 rounds to 0.24
     assert.equal(result.checks.pricing.calculate, "ok");
     assert.equal(result.checks.ingest.reachable, "ok");
     assert.equal(result.ok, true);

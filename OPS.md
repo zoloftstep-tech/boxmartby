@@ -172,7 +172,7 @@ curl -s -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \
 curl -s -D- "https://YOUR-SITE/api/live-catalog" -o /dev/null | grep -i X-Pricing-Source
 # или calculate через сайт и смотреть X-Pricing-Source: remote
 
-# Health (defaults + calculate golden 0.24 + ingest expect 401)
+# Health (defaults + calculate returns price + ingest expect 401)
 curl -sS "https://YOUR-SITE/api/health" | jq .
 ```
 
