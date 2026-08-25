@@ -29,10 +29,12 @@ Root Directory на Vercel у Site, BoxCalc и CRM: **`web`**.
 |-------|-----|-------------|
 | **Цены / тарифы / ourDies / blankTypes (meta) для сайта** | BoxCalc `org_settings` после **Publish** | Сайт: `/api/defaults` → `blankTypes[{id,name,category}]` **без формул**; расчёт — `/api/calculate` |
 | **Формулы развёртки (customTypes, overrides)** | BoxCalc `org_settings` (только сервер + SPA менеджеров) | **Не** публикуются в `/api/defaults`. Клиент сайта формул не получает |
+| **Каталог форматов листа (склад)** | BoxCalc `org_settings.sheetFormats` | `GET /api/defaults` → `sheetFormats[]` (`cardTypeId`, `active`); cutover: wipe → ввод → Save → Publish |
+| **Раскладка заготовки на лист** | BoxCalc `POST /api/layout` (`lib/calc/layout.ts`) | `blanksPerSheet`; без авто-выбора формата; CRM `fetchSheetLayout` |
 | **Формула FEFCO 0201 (геометрия)** | BoxCalc `web/src/lib/calc/fefco-0201.ts` | В SPA попадает через `npm run sync:fefco` → `public/calc/fefco-0201.js` |
 | **Локальный fallback цен на сайте** | Site `web/src/lib/pricing/*` | Используется если BoxCalc недоступен или нет env |
 | **Статусы заказов** | **CRM** | Не полагаться на Telegram inline-кнопки сайта как на SoT |
-| **Заявки с сайта** | `POST` Site `/api/submit-order` → CRM ingest | Email параллельно; сбой email ≠ откат заявки |
+| **Заявки с сайта** | `POST` Site `/api/submit-order` → CRM ingest | Email **после** CRM ingest; сбой email ≠ откат заявки |
 | **Парсер «Оптопак»** | Зависит от **webhook URL** | Может смотреть на Site *или* CRM — проверить `getWebhookInfo` перед правками |
 
 ---
@@ -61,11 +63,11 @@ Root Directory на Vercel у Site, BoxCalc и CRM: **`web`**.
 ```bash
 # BoxCalc
 cd web && npm test
-# = test:fefco + test:fefco-sync + test:pricing
+# = test:fefco + test:fefco-sync + test:pricing + test:layout
 
 # Site
 cd web && npm test
-# = test:pricing
+# = test:pricing + test:blank-types + test:idempotency + test:health
 ```
 
 Кейсы должны совпадать в `web/scripts/test-pricing-golden.ts` **обоих** репо.
@@ -166,9 +168,12 @@ curl -s -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \
   -d '{"items":[{"length":220,"width":70,"height":100,"quantity":50,"category":"fourFlap","material":"t22"}]}' \
   "${CALC_HOST}/api/calculate" | jq '.items[0].price_per_unit_no_vat'
 
-# Сайт: источник цен
-curl -s -D- -X POST "https://YOUR-SITE/api/live-catalog" -o /dev/null | grep -i X-Pricing-Source
+# Сайт: источник цен (GET)
+curl -s -D- "https://YOUR-SITE/api/live-catalog" -o /dev/null | grep -i X-Pricing-Source
 # или calculate через сайт и смотреть X-Pricing-Source: remote
+
+# Health (defaults + calculate golden 0.24 + ingest expect 401)
+curl -sS "https://YOUR-SITE/api/health" | jq .
 ```
 
 Локально перед пушем: `cd web && npm test` в затронутом репо.
@@ -199,8 +204,12 @@ curl -s -D- -X POST "https://YOUR-SITE/api/live-catalog" -o /dev/null | grep -i 
 | `web/src/lib/pricing/*` | Локальный расчёт / fallback |
 | `web/src/lib/pricing/remote-defaults.ts` | Defaults fetch, TTL 60s |
 | `web/src/app/api/submit-order/route.ts` | CRM ingest + email |
+| `web/src/app/api/health/route.ts` | Env/upstream ping (defaults, calculate, ingest 401) |
+| `web/src/lib/health-checks.ts` | Логика health (тестируемая) |
 | `web/src/app/api/optopak-webhook/route.ts` | Legacy Optopak на сайте |
 | `web/scripts/test-pricing-golden.ts` | Golden prices (lockstep с BoxCalc) |
+| `web/scripts/test-idempotency-key.ts` | Idempotency-Key helper |
+| `web/scripts/test-health-checks.ts` | Health checks (mocked fetch) |
 
 ---
 
@@ -218,6 +227,7 @@ curl -s -D- -X POST "https://YOUR-SITE/api/live-catalog" -o /dev/null | grep -i 
 | 2026-08-11 | Добавлены golden tests + FEFCO sync guard + warn `local-fallback` | Коммиты BoxCalc `fc00d84`, Site `929fb82` |
 | 2026-08-25 | Prod webhook audit: parser → CRM; notify status → Site legacy | `getWebhookInfo`; вердикт `parser_on_crm`; `setWebhook` не вызывался; legacy Site code `keep` до P2 |
 | 2026-08-25 | Site Idempotency-Key: client UUID per attempt + server body-hash fallback | Phase B; убран `randomUUID` на каждый POST; double-click/retry не плодят BM |
+| 2026-08-25 | Site `GET /api/health` + OPS Site↔BoxCalc sync | Phase C; ping defaults/calculate/ingest(401); email wording «после CRM»; live-catalog smoke = GET |
 
 ---
 
@@ -234,11 +244,11 @@ curl -s -D- -X POST "https://YOUR-SITE/api/live-catalog" -o /dev/null | grep -i 
 - [x] Этот OPS.md
 - [x] Аудит Telegram webhooks (2026-08-25): parser → CRM (`parser_on_crm`); notify status → Site legacy
 - [x] Стабильный Idempotency-Key на Site (2026-08-25, Phase B): client key + server body-hash; `test:idempotency`
+- [x] Лёгкий health env на Site (2026-08-25, Phase C): `GET /api/health`; `test:health`; OPS sync sheetFormats/layout
 
 ### Дальше (по приоритету)
 
 - [ ] План удаления legacy TG/Optopak с Site (P2; gate `parser_on_crm` выполнен; код пока `keep`)
-- [ ] Лёгкий **health** env (defaults/calculate/ingest ping, без утечки секретов)
 - [ ] Contract-тест Site remote vs BoxCalc в CI (сейчас unit на defaults seed)
 - [ ] Cron / дозаполнение CRM snapshots при сбое синхронного ingest (если будет боль)
 - [ ] Audit log на `hiddenFeatures` (низкий приоритет)
