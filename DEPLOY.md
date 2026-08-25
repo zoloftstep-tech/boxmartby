@@ -19,22 +19,18 @@
 
 В **Settings → Environment Variables** добавьте (Production / Preview):
 
-- `TELEGRAM_BOT_TOKEN`
-- `TELEGRAM_CHAT_ID`
-- `TELEGRAM_WEBHOOK_SECRET` — случайная строка (защита webhook статусов заказа)
-- `TELEGRAM_PARSER_BOT_TOKEN` — токен второго бота (парсер «Оптопак»)
-- `TELEGRAM_PARSER_WEBHOOK_SECRET` — секрет webhook второго бота
-- `GMAIL_USER`
-- `GMAIL_APP_PASSWORD`
-- `PERPLEXITY_API_KEY`
+- `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` — только для **pricing-contract** alert (Phase G), не для webhook статусов
+- `GMAIL_USER` / `GMAIL_APP_PASSWORD`
 - `ALLOWED_ORIGIN` — URL сайта на Vercel, например `https://your-project.vercel.app` (без слэша в конце)
-- **CRM ingest (cutover):**
+- **CRM ingest:**
   - `CRM_INGEST_URL` — `https://boxmart-crm.vercel.app/api/ingest/site`
   - `INGEST_SITE_SECRET` — тот же секрет, что на CRM (`INGEST_SITE_SECRET`)
 - `CALCULATOR_DEFAULTS_URL` — `https://YOUR-CALC-HOST/api/defaults` (BoxCalc)
 - `CALCULATOR_DEFAULTS_API_KEY` — тот же секрет, что `DEFAULTS_API_KEY` у BoxCalc
 - `CALCULATOR_CALCULATE_URL` — опционально; иначе сайт дергает `{host}/api/calculate` из defaults URL
-- **`CRON_SECRET`** — Bearer для `GET /api/cron/pricing-contract` (Phase G; `openssl rand -hex 32`). Без него cron отвечает 401. Алерт при fail идёт в тот же `TELEGRAM_CHAT_ID` (plain text, без кнопок статуса).
+- **`CRON_SECRET`** — Bearer для `GET /api/cron/pricing-contract` (Phase G; `openssl rand -hex 32`). Без него cron отвечает 401.
+
+**Не нужны на Site (Phase H, удалены routes):** `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_PARSER_*`, `PERPLEXITY_API_KEY` — парсер/Optopak и status webhook живут в **CRM**. Можно удалить эти env из Vercel Site после деплоя H.
 
 Сайт проксирует `POST /api/calculate` на BoxCalc (единая формула). Каталог штанцформ — `GET /api/live-catalog` → org `ourDies`. Без env — fallback на локальный `pricing-config.ts` (`ourDies: []`).
 
@@ -49,53 +45,16 @@ curl -sS -H "Authorization: Bearer $CRON_SECRET" "https://YOUR-SITE/api/cron/pri
 
 Локальный `.env.local` на Vercel не попадает.
 
-## Telegram webhook (статусы заказа)
+## Telegram (после Phase H)
 
-После деплоя и добавления `TELEGRAM_WEBHOOK_SECRET` один раз привяжите webhook бота к prod URL:
-
-```bash
-export TOKEN="…"          # TELEGRAM_BOT_TOKEN
-export SECRET="…"         # тот же TELEGRAM_WEBHOOK_SECRET, что на Vercel
-
-curl "https://api.telegram.org/bot$TOKEN/setWebhook" \
-  -d "url=https://boxmartby.vercel.app/api/telegram/webhook" \
-  -d "secret_token=$SECRET" \
-  -d 'allowed_updates=["callback_query"]'
-```
-
-Проверка: `curl "https://api.telegram.org/bot$TOKEN/getWebhookInfo"`.
-
-Заявки с сайта получают inline-кнопки статусов; нажатие редактирует то же сообщение (история в Europe/Minsk).
-
-## Telegram webhook (парсер «Оптопак»)
-
-После деплоя добавьте `TELEGRAM_PARSER_BOT_TOKEN` и `TELEGRAM_PARSER_WEBHOOK_SECRET`, затем один раз привяжите webhook второго бота к prod URL:
+- **Парсер Оптопак** — только CRM: webhook → `https://boxmart-crm.vercel.app/api/telegram/optopak` (секреты на CRM).
+- **Статусы заказов** — только CRM UI (кнопки в TG с сайта сняты).
+- **Site notify-бот:** после деплоя H снимите старый status webhook (иначе Telegram шлёт callback на 404):
 
 ```bash
-export TOKEN="…"          # TELEGRAM_PARSER_BOT_TOKEN
-export SECRET="…"         # тот же TELEGRAM_PARSER_WEBHOOK_SECRET, что на Vercel
-
-curl "https://api.telegram.org/bot$TOKEN/setWebhook" \
-  -d "url=https://boxmartby.vercel.app/api/optopak-webhook" \
-  -d "secret_token=$SECRET" \
-  -d 'allowed_updates=["message","callback_query"]'
+export TOKEN="…"   # TELEGRAM_BOT_TOKEN (notify)
+curl "https://api.telegram.org/bot$TOKEN/deleteWebhook"
+curl "https://api.telegram.org/bot$TOKEN/getWebhookInfo"
 ```
 
-Проверка: `curl "https://api.telegram.org/bot$TOKEN/getWebhookInfo"`.
-
-Парсер получает сообщения в группе «Оптопак», публикует карточки с inline-кнопками статусов в `TELEGRAM_CHAT_ID` и обрабатывает reply-уточнения.
-
-**Cutover на CRM:** переключите webhook парсера на CRM (статусы только в CRM, без inline-кнопок):
-
-```bash
-export TOKEN="…"          # TELEGRAM_PARSER_BOT_TOKEN (тот же бот)
-export SECRET="…"         # TELEGRAM_PARSER_WEBHOOK_SECRET с CRM
-
-curl "https://api.telegram.org/bot$TOKEN/setWebhook" \
-  -d "url=https://boxmart-crm.vercel.app/api/telegram/optopak" \
-  -d "secret_token=$SECRET"
-```
-
-Откат: вернуть `url=https://boxmartby.vercel.app/api/optopak-webhook`.
-
-Инструкция для менеджеров (закреп / `/help`): [`web/docs/optopak-manager-guide.md`](web/docs/optopak-manager-guide.md).
+Parser webhook **не** трогать. Инструкция менеджерам: [`web/docs/optopak-manager-guide.md`](web/docs/optopak-manager-guide.md) (поведение CRM).

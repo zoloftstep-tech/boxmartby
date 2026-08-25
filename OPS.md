@@ -104,8 +104,8 @@ cd web && npm test
 | `INGEST_SITE_SECRET` | — | ✅ | ✅ тот же |
 | `CRM_INGEST_URL` | — | ✅ `…/api/ingest/site` | — |
 | `ALLOWED_ORIGIN` / `ALLOWED_ORIGINS` | — | URL(ы) сайта **без** trailing slash, без кавычек в Vercel | — |
-| `CRON_SECRET` | — | ✅ Bearer для `GET /api/cron/pricing-contract` (`openssl rand -hex 32`) | свой для CRM crons |
-| Telegram bot tokens / webhook secrets | — | Site и/или CRM в зависимости от cutover | Optopak cutover |
+| Telegram bot tokens / webhook secrets | — | Site: только notify для pricing alert | Optopak parser + CRM notify |
+| `CRON_SECRET` | — | ✅ Bearer `GET /api/cron/pricing-contract` | свой для CRM crons |
 | `DATABASE_URL`, Better Auth | ✅ Neon | — | свой |
 
 **Правило:** после смены ключа обновить **все** проекты Vercel (Production), иначе silent fallback или 401/403.
@@ -118,38 +118,30 @@ cd web && npm test
 
 ### Сайт → CRM
 
-- `web/src/app/api/submit-order/route.ts` шлёт ingest в CRM (`CRM_INGEST_URL` + `INGEST_SITE_SECRET`).
+- `web/src/app/api/submit-order/route.ts` шлёт ingest в CRM (`CRM_INGEST_URL` + `INGEST_SITE_SECRET`) + email; TG заказных карточек сайт не шлёт.
 - Синхронный HTTP: при падении CRM заявка может не попасть в CRM (email отдельно).
 - Страница «спасибо»: `/spasibo`.
 
-### Legacy на Site (не удалять вслепую)
+### Telegram after Phase H (2026-08-25)
 
-Ещё есть код:
+Preflight `getWebhookInfo` перед удалением кода:
 
-- `/api/telegram/webhook` — статусы (исторически)
-- `/api/optopak-webhook` — парсер Оптопак на сайте
-- гайд менеджеров: `web/docs/optopak-manager-guide.md`
+| Бот | Webhook URL | pending |
+|-----|-------------|---------|
+| Parser | `https://boxmart-crm.vercel.app/api/telegram/optopak` | 0 |
+| Notify (после deleteWebhook) | `(empty)` | 0 |
 
-Cutover парсера на CRM описан в Site `DEPLOY.md` (URL `…/api/telegram/optopak` на CRM).
+- **Вердикт gate:** `parser_on_crm` — OK.
+- **Удалено с Site:** `/api/optopak-webhook`, `/api/telegram/webhook` + libs (parser/perplexity/status-callback/orderLinking).
+- **Осталось на Site:** `sendTelegramAlert` для pricing-contract cron; `TELEGRAM_BOT_TOKEN` + `CHAT_ID`.
+- **После деплоя:** notify `deleteWebhook` уже выполнен (url empty); parser webhook не трогали. Vercel Site: можно удалить unused `TELEGRAM_PARSER_*` / `TELEGRAM_WEBHOOK_SECRET` / `PERPLEXITY_*`.
+- Гайд менеджеров (CRM Optopak): `web/docs/optopak-manager-guide.md`
+- Статусы — только **CRM UI**. Старые TG status-кнопки не работают (ожидаемо).
 
-### Cutover status (2026-08-25)
+### Инструкции менеджерам
 
-Аудит: `getWebhookInfo` (токены Site = CRM; `setWebhook` не вызывался).
-
-| Бот | Webhook URL | pending | last_error |
-|-----|-------------|---------|------------|
-| Notify (`TELEGRAM_BOT_TOKEN`) | `https://boxmartby.vercel.app/api/telegram/webhook` (`allowed_updates`: `callback_query`) | 0 | — |
-| Parser (`TELEGRAM_PARSER_BOT_TOKEN`) | `https://boxmart-crm.vercel.app/api/telegram/optopak` (`message`, `callback_query`) | 0 | — |
-
-- **Вердикт:** `parser_on_crm`
-- **Legacy Site code:** `keep` (удаление — только отдельная P2-сессия)
-- **Gate:** удаление `/api/optopak-webhook` и `/api/telegram/webhook` на Site разрешено планировать только при `parser_on_crm` (сейчас выполнено); notify status webhook на Site — legacy, не SoT статусов
-
-### Инструкции менеджерам (актуальное поведение)
-
-- Пробел перед «шт» желателен для людей; код эвристики принимает и `40шт`, и `40 шт` — сбои чаще от LLM/Perplexity, не от жёсткого regex пробела.
-- Статусы вести в **CRM**, не через старые Telegram-кнопки сайта (cutover парсера на CRM подтверждён 2026-08-25).
-
+- Статусы вести в **CRM**, не через Telegram-кнопки.
+- Optopak → CRM webhook.
 ---
 
 ## 5. Деплой и проверки
@@ -209,6 +201,8 @@ curl -sS -H "Authorization: Bearer $CRON_SECRET" \
 
 Расписание Vercel (Hobby: не чаще 1×/сутки): `0 6 * * *` UTC (= 09:00 Минск) → `/api/cron/pricing-contract`.
 
+**Phase H smoke:** заявка с сайта → CRM; Optopak → CRM BM; `/api/optopak-webhook` и `/api/telegram/webhook` → 404; после `deleteWebhook` notify — `getWebhookInfo` url empty.
+
 Локально перед пушем: `cd web && npm test` в затронутом репо.
 
 ---
@@ -241,10 +235,10 @@ curl -sS -H "Authorization: Bearer $CRON_SECRET" \
 | `web/src/lib/health-checks.ts` | Логика health (тестируемая) |
 | `web/src/lib/pricing/pricing-contract.ts` | Live contract BoxCalc + Site remote |
 | `web/src/app/api/cron/pricing-contract/route.ts` | Cron + TG alert при fail |
-| `web/src/app/api/optopak-webhook/route.ts` | Legacy Optopak на сайте |
 | `web/scripts/test-pricing-golden.ts` | Golden prices (lockstep с BoxCalc) |
 | `web/scripts/test-idempotency-key.ts` | Idempotency-Key helper |
 | `web/scripts/test-contract-calculate.ts` | Contract calculate (skip без env) |
+| `web/docs/optopak-manager-guide.md` | Гайд Optopak (поведение CRM) |
 | `web/scripts/test-health-checks.ts` | Health checks (mocked fetch) |
 
 ---
@@ -267,6 +261,7 @@ curl -sS -H "Authorization: Bearer $CRON_SECRET" \
 | 2026-08-25 | Site ESLint flat config (`eslint.config.mjs` + `lint: eslint`) | Phase E; неинтерактивный lint как CRM/BoxCalc; без split Calculator/Optopak |
 | 2026-08-25 | Soft observability: `[pricing]`/`[ingest]` tags + health uptime doc | Phase F; без Sentry/admin banner; контракты API не менялись |
 | 2026-08-25 | Site contract calculate + cron TG alert | Phase G; shape/finite/`remote`; cron daily `0 6 * * *` UTC (Hobby); без жёсткого 0.24 |
+| 2026-08-25 | Removed Site legacy Optopak + status webhook | Phase H; gate `parser_on_crm` re-checked; notify deleteWebhook after deploy |
 
 ---
 
@@ -287,10 +282,10 @@ curl -sS -H "Authorization: Bearer $CRON_SECRET" \
 - [x] Site ESLint flat config (2026-08-25, Phase E): `eslint.config.mjs`; `npm run lint` без prompt
 - [x] Soft observability (2026-08-25, Phase F): Vercel log tags + health ping checklist
 - [x] Contract Site↔BoxCalc + TG cron (2026-08-25, Phase G): `test:contract-calculate`; `/api/cron/pricing-contract`
+- [x] Удаление legacy TG/Optopak с Site (2026-08-25, Phase H)
 
 ### Дальше (по приоритету)
 
-- [ ] План удаления legacy TG/Optopak с Site (P2; gate `parser_on_crm` выполнен; код пока `keep`)
 - [ ] Cron / дозаполнение CRM snapshots при сбое синхронного ingest (если будет боль)
 - [ ] Audit log на `hiddenFeatures` (низкий приоритет)
 - [ ] Ротация секретов по чеклисту (Doppler — только если ручная боль)
@@ -300,7 +295,7 @@ curl -sS -H "Authorization: Bearer $CRON_SECRET" \
 - Вынос pricing в отдельный microservice / npm package «ради чистоты»
 - Очереди / CQRS / event bus под текущий объём
 - Унификация ORM Site ↔ BoxCalc ↔ CRM
-- Удаление Telegram/Optopak кода на сайте **без** отдельного P2-согласования (audit 2026-08-25: `parser_on_crm`)
+- Возврат status-кнопок в Telegram на сайте
 - Широкий рефакторинг парсера под один кейс LLM
 
 ---
