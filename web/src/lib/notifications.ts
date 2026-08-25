@@ -62,6 +62,37 @@ export async function sendTelegramMessage(text: string, orderId: string): Promis
   }
 }
 
+/** Plain ops alert (no order status keyboard). Returns false if skipped / failed. */
+export async function sendTelegramAlert(text: string): Promise<boolean> {
+  const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
+  const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
+
+  if (!token || !chatId) {
+    console.error("[telegram] alert skipped: TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID missing");
+    return false;
+  }
+
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+      }),
+    });
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      console.error("[telegram] alert failed", response.status, body.slice(0, 200));
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("[telegram] alert failed", err);
+    return false;
+  }
+}
+
 export async function sendEmailNotification(text: string, order: OrderRequest): Promise<void> {
   const user = process.env.GMAIL_USER;
   const pass = process.env.GMAIL_APP_PASSWORD;

@@ -34,6 +34,7 @@
 - `CALCULATOR_DEFAULTS_URL` — `https://YOUR-CALC-HOST/api/defaults` (BoxCalc)
 - `CALCULATOR_DEFAULTS_API_KEY` — тот же секрет, что `DEFAULTS_API_KEY` у BoxCalc
 - `CALCULATOR_CALCULATE_URL` — опционально; иначе сайт дергает `{host}/api/calculate` из defaults URL
+- **`CRON_SECRET`** — Bearer для `GET /api/cron/pricing-contract` (Phase G; `openssl rand -hex 32`). Без него cron отвечает 401. Алерт при fail идёт в тот же `TELEGRAM_CHAT_ID` (plain text, без кнопок статуса).
 
 Сайт проксирует `POST /api/calculate` на BoxCalc (единая формула). Каталог штанцформ — `GET /api/live-catalog` → org `ourDies`. Без env — fallback на локальный `pricing-config.ts` (`ourDies: []`).
 
@@ -42,6 +43,8 @@
 ```bash
 curl -s -H "Authorization: Bearer $KEY" "$CALCULATOR_DEFAULTS_URL" | jq '.ourDies | length'
 curl -s -D- -X POST https://YOUR-SITE/api/live-catalog -o /dev/null | grep -i X-Pricing-Source
+curl -sS -H "Authorization: Bearer $CRON_SECRET" "https://YOUR-SITE/api/cron/pricing-contract" | jq .
+# Ожидание: { "ok": true }; при fail — Telegram [pricing-contract] FAIL
 ```
 
 Локальный `.env.local` на Vercel не попадает.

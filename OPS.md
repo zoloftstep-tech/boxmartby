@@ -67,7 +67,8 @@ cd web && npm test
 
 # Site
 cd web && npm test
-# = test:pricing + test:blank-types + test:idempotency + test:health
+# = test:pricing + test:blank-types + test:idempotency + test:health + test:contract-calculate
+# test:contract-calculate: без CALCULATOR_* → skip; с env — live BoxCalc (+ SITE_ORIGIN → remote header)
 ```
 
 Кейсы должны совпадать в `web/scripts/test-pricing-golden.ts` **обоих** репо.
@@ -103,6 +104,7 @@ cd web && npm test
 | `INGEST_SITE_SECRET` | — | ✅ | ✅ тот же |
 | `CRM_INGEST_URL` | — | ✅ `…/api/ingest/site` | — |
 | `ALLOWED_ORIGIN` / `ALLOWED_ORIGINS` | — | URL(ы) сайта **без** trailing slash, без кавычек в Vercel | — |
+| `CRON_SECRET` | — | ✅ Bearer для `GET /api/cron/pricing-contract` (`openssl rand -hex 32`) | свой для CRM crons |
 | Telegram bot tokens / webhook secrets | — | Site и/или CRM в зависимости от cutover | Optopak cutover |
 | `DATABASE_URL`, Better Auth | ✅ Neon | — | свой |
 
@@ -186,8 +188,26 @@ curl -sS "https://YOUR-SITE/api/health" | jq .
 | Site | Заявка не ушла в CRM | `[submit-order]` |
 | CRM | Ingest 401/500/400 | `[ingest] unauthorized` / `misconfigured` / `bad_request` |
 | CRM | Нет снимков FEFCO | `[ingest] BOXCALC_* missing` |
+| Site | Pricing contract cron fail | `[cron/pricing-contract]`; TG `[pricing-contract] FAIL` |
 
 **Post-deploy smoke (Phase F):** `GET /api/health` → 200 + `ok: true`; `POST` CRM `/api/ingest/site` с `Authorization: Bearer wrong` → **401**, в логах CRM `[ingest] unauthorized`, **без** нового BM.
+
+**Contract + TG cron (Phase G):**
+
+```bash
+# Live script (локально / CI с секретами)
+CALCULATOR_DEFAULTS_URL=… CALCULATOR_DEFAULTS_API_KEY=… \
+  SITE_ORIGIN=https://boxmartby.vercel.app \
+  npm run test:contract-calculate
+
+# Cron smoke (после CRON_SECRET в Vercel Site)
+curl -sS -H "Authorization: Bearer $CRON_SECRET" \
+  "https://boxmartby.vercel.app/api/cron/pricing-contract" | jq .
+# Ожидание: { "ok": true, ... }; в Telegram тишина.
+# При fail: ok:false + сообщение в TELEGRAM_CHAT_ID (без кнопок статуса заказа).
+```
+
+Расписание Vercel: `0 */6 * * *` → `/api/cron/pricing-contract`.
 
 Локально перед пушем: `cd web && npm test` в затронутом репо.
 
@@ -219,9 +239,12 @@ curl -sS "https://YOUR-SITE/api/health" | jq .
 | `web/src/app/api/submit-order/route.ts` | CRM ingest + email |
 | `web/src/app/api/health/route.ts` | Env/upstream ping (defaults, calculate, ingest 401) |
 | `web/src/lib/health-checks.ts` | Логика health (тестируемая) |
+| `web/src/lib/pricing/pricing-contract.ts` | Live contract BoxCalc + Site remote |
+| `web/src/app/api/cron/pricing-contract/route.ts` | Cron + TG alert при fail |
 | `web/src/app/api/optopak-webhook/route.ts` | Legacy Optopak на сайте |
 | `web/scripts/test-pricing-golden.ts` | Golden prices (lockstep с BoxCalc) |
 | `web/scripts/test-idempotency-key.ts` | Idempotency-Key helper |
+| `web/scripts/test-contract-calculate.ts` | Contract calculate (skip без env) |
 | `web/scripts/test-health-checks.ts` | Health checks (mocked fetch) |
 
 ---
@@ -243,6 +266,7 @@ curl -sS "https://YOUR-SITE/api/health" | jq .
 | 2026-08-25 | Site `GET /api/health` + OPS Site↔BoxCalc sync | Phase C; ping defaults/calculate/ingest(401); email wording «после CRM»; live-catalog smoke = GET |
 | 2026-08-25 | Site ESLint flat config (`eslint.config.mjs` + `lint: eslint`) | Phase E; неинтерактивный lint как CRM/BoxCalc; без split Calculator/Optopak |
 | 2026-08-25 | Soft observability: `[pricing]`/`[ingest]` tags + health uptime doc | Phase F; без Sentry/admin banner; контракты API не менялись |
+| 2026-08-25 | Site contract calculate + cron TG alert | Phase G; shape/finite/`remote`; cron 6h; без жёсткого 0.24 |
 
 ---
 
@@ -262,11 +286,11 @@ curl -sS "https://YOUR-SITE/api/health" | jq .
 - [x] Лёгкий health env на Site (2026-08-25, Phase C): `GET /api/health`; `test:health`; OPS sync sheetFormats/layout
 - [x] Site ESLint flat config (2026-08-25, Phase E): `eslint.config.mjs`; `npm run lint` без prompt
 - [x] Soft observability (2026-08-25, Phase F): Vercel log tags + health ping checklist
+- [x] Contract Site↔BoxCalc + TG cron (2026-08-25, Phase G): `test:contract-calculate`; `/api/cron/pricing-contract`
 
 ### Дальше (по приоритету)
 
 - [ ] План удаления legacy TG/Optopak с Site (P2; gate `parser_on_crm` выполнен; код пока `keep`)
-- [ ] Contract-тест Site remote vs BoxCalc в CI (сейчас unit на defaults seed)
 - [ ] Cron / дозаполнение CRM snapshots при сбое синхронного ingest (если будет боль)
 - [ ] Audit log на `hiddenFeatures` (низкий приоритет)
 - [ ] Ротация секретов по чеклисту (Doppler — только если ручная боль)
