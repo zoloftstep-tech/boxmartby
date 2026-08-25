@@ -83,7 +83,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Отсутствует состав заказа" }, { status: 400 });
   }
 
-  const { personalDataConsent: _consent, ...crmOrder } = order;
+  const { personalDataConsent: _, ...crmOrder } = order;
+  void _;
 
   const idempotencyKey = buildSiteIdempotencyKey(
     req.headers.get("idempotency-key"),

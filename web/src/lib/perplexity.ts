@@ -171,7 +171,11 @@ async function perplexityJson<T>(params: {
   }
 
   const body = (await response.json().catch(() => null)) as unknown;
-  const content = (body as any)?.choices?.[0]?.message?.content;
+  const content = (
+    body as {
+      choices?: Array<{ message?: { content?: unknown } }>;
+    } | null
+  )?.choices?.[0]?.message?.content;
   if (typeof content !== "string" || !content.trim()) {
     console.error("[perplexity] empty content", JSON.stringify(body)?.slice(0, 500));
     return null;

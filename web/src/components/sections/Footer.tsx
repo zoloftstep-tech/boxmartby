@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { IconClock, IconDownload, IconMail, IconPhone } from "../icons";
 
 export function Footer() {
@@ -144,9 +145,9 @@ export function Footer() {
             >
               Положение о политике в отношении обработки персональных
             </a>
-            <a href="/#calculator" className="focus-ring cursor-pointer text-slate-400 hover:text-white">
+            <Link href="/#calculator" className="focus-ring cursor-pointer text-slate-400 hover:text-white">
               Рассчитать стоимость →
-            </a>
+            </Link>
           </div>
         </div>
       </div>

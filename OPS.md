@@ -228,6 +228,7 @@ curl -sS "https://YOUR-SITE/api/health" | jq .
 | 2026-08-25 | Prod webhook audit: parser → CRM; notify status → Site legacy | `getWebhookInfo`; вердикт `parser_on_crm`; `setWebhook` не вызывался; legacy Site code `keep` до P2 |
 | 2026-08-25 | Site Idempotency-Key: client UUID per attempt + server body-hash fallback | Phase B; убран `randomUUID` на каждый POST; double-click/retry не плодят BM |
 | 2026-08-25 | Site `GET /api/health` + OPS Site↔BoxCalc sync | Phase C; ping defaults/calculate/ingest(401); email wording «после CRM»; live-catalog smoke = GET |
+| 2026-08-25 | Site ESLint flat config (`eslint.config.mjs` + `lint: eslint`) | Phase E; неинтерактивный lint как CRM/BoxCalc; без split Calculator/Optopak |
 
 ---
 
@@ -245,6 +246,7 @@ curl -sS "https://YOUR-SITE/api/health" | jq .
 - [x] Аудит Telegram webhooks (2026-08-25): parser → CRM (`parser_on_crm`); notify status → Site legacy
 - [x] Стабильный Idempotency-Key на Site (2026-08-25, Phase B): client key + server body-hash; `test:idempotency`
 - [x] Лёгкий health env на Site (2026-08-25, Phase C): `GET /api/health`; `test:health`; OPS sync sheetFormats/layout
+- [x] Site ESLint flat config (2026-08-25, Phase E): `eslint.config.mjs`; `npm run lint` без prompt
 
 ### Дальше (по приоритету)
 

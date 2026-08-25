@@ -98,7 +98,9 @@ async function telegramSendMessage(params: {
     throw new Error(`Telegram sendMessage failed: ${response.status} ${text}`);
   }
 
-  const body = (await response.json()) as any;
+  const body = (await response.json()) as {
+    result?: { message_id?: number };
+  };
   return body?.result?.message_id as number;
 }
 
@@ -183,10 +185,10 @@ function applyChangeToOrderData(params: {
       else if (field === "height") next.height = Math.round(value);
       else if (field === "price_per_unit") next.price_per_unit = Math.round(value * 100) / 100;
     }
-  } else if (params.change.field_changed && typeof (params.change as any).new_value === "number") {
+  } else if (params.change.field_changed && typeof params.change.new_value === "number") {
     // single-field mode
     const field = params.change.field_changed;
-    const value = (params.change as any).new_value as number;
+    const value = params.change.new_value;
     if (field === "quantity") next.quantity = Math.round(value);
     else if (field === "length") next.length = Math.round(value);
     else if (field === "width") next.width = Math.round(value);

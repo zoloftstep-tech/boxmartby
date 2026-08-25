@@ -47,12 +47,12 @@ export function LandingContent({ slug }: { slug: LandingSlug }) {
             <p className="mt-5 text-base leading-relaxed text-ink-soft sm:text-lg">{page.intro}</p>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              <a
+              <Link
                 href="/#calculator"
                 className="focus-ring inline-flex cursor-pointer items-center rounded-md bg-cta px-5 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-cta-hover"
               >
                 {page.ctaLabel}
-              </a>
+              </Link>
               <Link
                 href="/#catalog"
                 className="focus-ring inline-flex cursor-pointer items-center rounded-md border border-line bg-surface-elevated px-5 py-3 text-sm font-semibold text-ink transition-colors duration-200 hover:border-ink/20"
@@ -84,12 +84,12 @@ export function LandingContent({ slug }: { slug: LandingSlug }) {
             <p className="mt-2 text-sm leading-relaxed text-ink-soft">
               Укажите размеры и тираж в калькуляторе — получите цену за штуку и оставьте заявку.
             </p>
-            <a
+            <Link
               href="/#calculator"
               className="focus-ring mt-4 inline-flex cursor-pointer items-center rounded-md bg-cta px-5 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-cta-hover"
             >
               {page.ctaLabel}
-            </a>
+            </Link>
           </div>
         </div>
       </section>

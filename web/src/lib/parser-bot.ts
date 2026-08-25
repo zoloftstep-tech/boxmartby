@@ -247,7 +247,6 @@ export function applyReplyChangeToCardText(params: {
   const createdAt = extractLineValue(base, "Дата/время") ?? at;
 
   const existing = splitByEditHistory(base);
-  const prefixWithoutEdit = existing.prefix;
   const editPart = existing.editPart;
 
   // Rebuild the main card prefix (without edit history and without status history).

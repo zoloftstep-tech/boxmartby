@@ -23,12 +23,12 @@ export default function NotFound() {
               >
                 На главную
               </Link>
-              <a
+              <Link
                 href="/#calculator"
                 className="focus-ring inline-flex cursor-pointer items-center rounded-md border border-line bg-surface-elevated px-5 py-3 text-sm font-semibold text-ink transition-colors duration-200 hover:border-ink/20"
               >
                 Калькулятор
-              </a>
+              </Link>
             </div>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-muted">
               <Link href="/korobki-kartonnye-minsk" className="focus-ring hover:text-ink">

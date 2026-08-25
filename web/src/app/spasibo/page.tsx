@@ -32,12 +32,12 @@ export default function SpasiboPage() {
               >
                 На главную
               </Link>
-              <a
+              <Link
                 href="/#calculator"
                 className="focus-ring inline-flex cursor-pointer items-center rounded-md border border-line bg-surface-elevated px-5 py-3 text-sm font-semibold text-ink transition-colors duration-200 hover:border-ink/20"
               >
                 Снова в калькулятор
-              </a>
+              </Link>
             </div>
           </div>
         </div>

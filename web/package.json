@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint",
     "test:pricing": "tsx scripts/test-pricing-golden.ts",
     "test:blank-types": "tsx scripts/test-blank-types-catalog.ts",
     "test:idempotency": "tsx scripts/test-idempotency-key.ts",
@@ -20,6 +20,7 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.6",
     "@tailwindcss/postcss": "^4.1.0",
     "@types/node": "^22.0.0",
     "@types/nodemailer": "^8.0.1",
