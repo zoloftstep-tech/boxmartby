@@ -21,11 +21,12 @@ export function Hero() {
               ООО «БОКСМАРТ»
             </p>
             <h1 className="font-display mt-4 max-w-xl text-4xl font-semibold leading-[1.08] tracking-tight text-ink sm:text-5xl lg:text-[3.25rem]">
-              Надежная упаковка для вашего бизнеса напрямую от производителя
+              Картонные коробки в Минске — купить от производителя
             </h1>
             <p className="mt-5 max-w-lg text-base leading-relaxed text-ink-soft sm:text-lg">
-              Изготавливаем картонные коробки любых размеров. Точная геометрия, прочный
-              гофрокартон и честные цены без посредников.
+              Гофротара любых размеров: самосборные и четырёхклапанные, опт и партии
+              под маркетплейсы. Считайте цену онлайн и оформите заявку — производство на
+              ул. Притыцкого 62.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <a

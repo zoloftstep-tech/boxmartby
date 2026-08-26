@@ -4,10 +4,10 @@ export const SITE_URL = "https://www.boxmart.by";
 
 export const SITE_NAME = "БОКСМАРТ";
 
-export const SITE_TITLE = "БОКСМАРТ — производство картонных коробок в Минске";
+export const SITE_TITLE = "Купить картонные коробки в Минске — БОКСМАРТ";
 
 export const SITE_DESCRIPTION =
-  "Гофрокартонные коробки любых размеров напрямую от производителя. Расчёт онлайн для бизнеса и селлеров Wildberries и Ozon.";
+  "Купить гофрокартонные коробки напрямую от производителя в Минске. Расчёт онлайн, самовывоз с ул. Притыцкого 62. Для бизнеса и селлеров WB и Ozon.";
 
 export const SITE_PHONE = "+375296168169";
 export const SITE_EMAIL = "boxmartprod@gmail.com";
