@@ -45,8 +45,11 @@ export function localPricingConfig(): LivePricingConfig {
     minL: MIN_DIMS.minL,
     minW: MIN_DIMS.minW,
     minWH: MIN_DIMS.minWH,
-    areaSurcharge: AREA_SURCHARGE,
-    tiersOpt: QTY_TIERS_OPT,
+    areaSurcharge: AREA_SURCHARGE.map((r) => ({ ...r })),
+    tiersOpt: {
+      fourFlap: QTY_TIERS_OPT.fourFlap.map((t) => ({ ...t })),
+      selfLock: QTY_TIERS_OPT.selfLock.map((t) => ({ ...t })),
+    },
     materials: { ...MATERIAL_PRICES },
     referenceMaterial: REFERENCE_MATERIAL,
     ourDies: [],

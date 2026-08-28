@@ -73,6 +73,20 @@ cd web && npm test
 
 Кейсы должны совпадать в `web/scripts/test-pricing-golden.ts` **обоих** репо.
 
+### Формула цены v2 (с 2026-08)
+
+```
+areaPrice = round2(area_m2)                    // 0,416448 → 0,42
+matCost   = areaPrice × costPerSqM марки
+unitNet   = round2(matCost × (tierCoef + areaSurcharge) × (1 − discount%))
+```
+
+- Коэффициент — **множитель на себестоимость материала** (не руб/м²). После миграции: `coef_new = coef_old / refCost`.
+- `pricingFormulaVersion: 2` в org settings; миграция при load/publish/merge.
+- Контрольный golden: **550×140×140, тираж 100, t23, надбавка +0,1 active → 0,91 BYN** (areaPrice=0,42).
+
+После деплоя BoxCalc: **Publish org settings** → деплой Site → проверить `pricing-contract` cron.
+
 ### Пустые ourDies на сайте
 
 Обычно: нет env defaults, или в org не опубликованы dies, или смотрите старый кэш (до 60 с). Не «чинить» каталог правкой только локального `pricing-config.ts` — publish org.

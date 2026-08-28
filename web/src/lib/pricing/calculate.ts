@@ -13,8 +13,9 @@ import { blankAreaForFormula, defaultFormulaForCategory } from "./fefco-formulas
 import { isBuiltinFormulaForCategory, isKnownBlankTypeId } from "./fefco-catalog";
 import { localPricingConfig, type LivePricingConfig } from "./remote-defaults";
 import { dimWarningsForItem } from "./dim-warnings";
+import { roundAreaForPrice, roundPrice } from "./round";
 
-export { dimWarningsForItem };
+export { dimWarningsForItem, roundAreaForPrice, roundPrice };
 export type PricingInput = CalcItemInput;
 
 function blankAreaFourFlap(A: number, B: number, H: number, formulaTypeId?: string): number {
@@ -129,8 +130,8 @@ export function validateItem(item: PricingInput, pricing: LivePricingConfig = lo
 }
 
 /**
- * unitNet = area × (baseCoef + areaSurcharge) + area × (cardCost − refCost)
- * Matches BoxCalc calculateResult() (discount = 0, mode = opt); full-precision area.
+ * unitNet = round2(areaPrice × cardCost × (baseCoef + areaSurcharge))
+ * Matches BoxCalc calculateItem (discount = 0, mode = opt).
  */
 export function calculateItem(
   item: PricingInput,
@@ -148,7 +149,6 @@ export function calculateItem(
         ? formulaTypeId
         : defaultFormulaForCategory(category);
   const rawArea = blankArea(category, A, B, H, formulaTypeId);
-  // Full precision for price (matches BoxCalc SPA); UI may round for display.
   const area = rawArea;
   const tiers = pricing.tiersOpt[tierCategoryId(category)];
   const baseCoef = tierForQty(tiers, item.quantity).coef;
@@ -156,11 +156,9 @@ export function calculateItem(
   const finalCoef = baseCoef + surcharge;
 
   const cardCost = pricing.materials[material].costPerSqM;
-  const refCost = pricing.materials[pricing.referenceMaterial].costPerSqM;
-  const costDiff = area * (cardCost - refCost);
-
-  const unitNet = area * finalCoef + costDiff;
-  const totalNet = unitNet * item.quantity;
+  const areaPrice = roundAreaForPrice(area);
+  const unitNet = roundPrice(areaPrice * cardCost * finalCoef);
+  const totalNet = roundPrice(unitNet * item.quantity);
   const volume = (A * B * H) / 1_000_000;
 
   return {

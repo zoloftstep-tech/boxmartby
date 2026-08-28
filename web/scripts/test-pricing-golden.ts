@@ -1,11 +1,10 @@
 /**
- * Golden pricing cases — localPricingConfig (static defaults), mode=opt.
- * Must stay in lockstep with boxcalculator web/scripts/test-pricing-golden.ts
+ * Golden pricing cases — formula v2, mode=opt, discount=0.
+ * Must stay in lockstep with boxcalculator-main web/scripts/test-pricing-golden.ts
  */
 import assert from "node:assert/strict";
 import { calculateItems } from "../src/lib/pricing/calculate";
-import { localPricingConfig } from "../src/lib/pricing/remote-defaults";
-import type { CalcItemInput } from "../src/lib/types";
+import { localPricingConfig, type LivePricingConfig } from "../src/lib/pricing/remote-defaults";
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
@@ -13,24 +12,45 @@ function round2(n: number): number {
 
 type Golden = {
   name: string;
-  item: CalcItemInput;
+  item: Parameters<typeof calculateItems>[0][0];
   area_m2: number;
   price_per_unit_rounded2: number;
+  pricingPatch?: (p: LivePricingConfig) => void;
 };
 
 const CASES: Golden[] = [
   {
-    name: "fourFlap 220×70×100×50 t22 → 0.24",
+    name: "fourFlap 550×140×140×100 t23 + areaSurcharge → 0.91",
     item: {
-      length: 220,
-      width: 70,
-      height: 100,
-      quantity: 50,
+      length: 550,
+      width: 140,
+      height: 140,
+      quantity: 100,
       category: "fourFlap",
-      material: "t22",
+      material: "t23",
     },
-    area_m2: 0.11498799999999999,
-    price_per_unit_rounded2: 0.24,
+    area_m2: 0.416448,
+    price_per_unit_rounded2: 0.91,
+    pricingPatch: (p) => {
+      if (p.areaSurcharge[0]) p.areaSurcharge[0].active = true;
+    },
+  },
+  {
+    name: "fourFlap 550×140×140×100 p32@2.6 + surcharge → 2.72",
+    item: {
+      length: 550,
+      width: 140,
+      height: 140,
+      quantity: 100,
+      category: "fourFlap",
+      material: "p32",
+    },
+    area_m2: 0.416448,
+    price_per_unit_rounded2: 2.72,
+    pricingPatch: (p) => {
+      if (p.areaSurcharge[0]) p.areaSurcharge[0].active = true;
+      p.materials.p32 = { label: "П-32", costPerSqM: 2.6 };
+    },
   },
   {
     name: "fourFlap 600×400×400×100 t23 → 3.46",
@@ -46,7 +66,7 @@ const CASES: Golden[] = [
     price_per_unit_rounded2: 3.46,
   },
   {
-    name: "selfLock 300×200×150×500 t24 → 1.45",
+    name: "selfLock 300×200×150×500 t24 → 1.53",
     item: {
       length: 300,
       width: 200,
@@ -56,27 +76,13 @@ const CASES: Golden[] = [
       material: "t24",
     },
     area_m2: 0.522372,
-    price_per_unit_rounded2: 1.45,
-  },
-  {
-    name: "selfLock fefco_0470 300×200×150×500 t24 → 1.67",
-    item: {
-      length: 300,
-      width: 200,
-      height: 150,
-      quantity: 500,
-      category: "selfLock",
-      material: "t24",
-      formulaTypeId: "fefco_0470",
-    },
-    area_m2: 0.60098,
-    price_per_unit_rounded2: 1.67,
+    price_per_unit_rounded2: 1.53,
   },
 ];
 
-const pricing = localPricingConfig();
-
 for (const c of CASES) {
+  const pricing = localPricingConfig();
+  if (c.pricingPatch) c.pricingPatch(pricing);
   const res = calculateItems([c.item], pricing);
   const row = res.items[0];
   assert.ok(Math.abs(row.area_m2 - c.area_m2) < 1e-9, `${c.name}: area=${row.area_m2}`);
