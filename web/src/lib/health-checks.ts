@@ -23,9 +23,6 @@ export type HealthEnv = {
   INGEST_SITE_SECRET?: string;
 };
 
-const DEFAULT_CRM_INGEST =
-  "https://boxmart-crm.vercel.app/api/ingest/site";
-
 const TIMEOUT_MS = 3000;
 
 const GOLDEN_ITEM = {
@@ -151,12 +148,12 @@ export async function runHealthChecks(opts?: {
   }
 
   const ingestSecret = env.INGEST_SITE_SECRET?.trim();
-  const ingestUrl =
-    env.CRM_INGEST_URL?.trim() || DEFAULT_CRM_INGEST;
-  const ingestEnv: CheckStatus = ingestSecret ? "ok" : "missing";
+  const ingestUrl = env.CRM_INGEST_URL?.trim();
+  const ingestEnv: CheckStatus =
+    ingestSecret && ingestUrl ? "ok" : "missing";
 
   let reachable: CheckStatus = ingestEnv === "ok" ? "fail" : "skipped";
-  if (ingestEnv === "ok") {
+  if (ingestEnv === "ok" && ingestUrl) {
     try {
       const res = await fetchWithTimeout(
         fetchFn,
