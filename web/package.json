@@ -12,7 +12,8 @@
     "test:idempotency": "tsx scripts/test-idempotency-key.ts",
     "test:health": "tsx scripts/test-health-checks.ts",
     "test:contract-calculate": "tsx scripts/test-contract-calculate.ts",
-    "test": "npm run test:pricing && npm run test:blank-types && npm run test:idempotency && npm run test:health && npm run test:contract-calculate"
+    "test:order-item-spec": "tsx scripts/test-order-item-spec.ts",
+    "test": "npm run test:pricing && npm run test:blank-types && npm run test:idempotency && npm run test:health && npm run test:contract-calculate && npm run test:order-item-spec"
   },
   "dependencies": {
     "next": "^15.3.0",

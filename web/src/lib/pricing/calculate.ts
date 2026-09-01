@@ -175,6 +175,9 @@ export function calculateItem(
     price_per_unit_no_vat: unitNet,
     total_price_no_vat: totalNet,
     formulaTypeId: resolvedFormulaId,
+    ...(category === "ourDies" && die
+      ? { die_id: die.id, die_label: die.name }
+      : {}),
   };
 }
 

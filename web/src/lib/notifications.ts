@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { formatSiteOrderItemBlock } from "@/lib/order-item-spec";
 import type { CalcItemResult, OrderRequest } from "@/lib/types";
 
 /** 600×400×400 в любом порядке — пометка в тексте уведомления */
@@ -13,9 +14,8 @@ function formatMoney(value: number): string {
 
 function formatItemLine(item: CalcItemResult, index: number): string {
   const special = isSpecialRetailDims(item.length, item.width, item.height);
-  const fefco = item.formulaTypeId ? ` · ${item.formulaTypeId.replace(/^fefco_/, "FEFCO ")}` : "";
-  const base = `${index + 1}. ${item.length}×${item.width}×${item.height} мм · ${item.category_label}${fefco} · ${item.material_label} · ${item.quantity} шт — ${formatMoney(item.price_per_unit_no_vat)} BYN/шт, итого ${formatMoney(item.total_price_no_vat)} BYN`;
-  return special ? `${base} (специальная розничная позиция — уточнить цену)` : base;
+  const specialNote = special ? "(специальная розничная позиция — уточнить цену)" : null;
+  return formatSiteOrderItemBlock(item, index, { specialRetailNote: specialNote });
 }
 
 export function buildMessageText(order: OrderRequest, orderId: string): string {

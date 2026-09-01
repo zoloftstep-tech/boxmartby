@@ -5,6 +5,7 @@ import {
   sendEmailNotification,
 } from "@/lib/notifications";
 import { buildSiteIdempotencyKey } from "@/lib/idempotency";
+import { enrichQuotedItems } from "@/lib/enrich-quoted-items";
 import { validateItem } from "@/lib/pricing/calculate";
 import { calculateViaRemote } from "@/lib/pricing/remote-calculate";
 import { getLivePricingConfig } from "@/lib/pricing/remote-defaults";
@@ -134,11 +135,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const enrichedItems = enrichQuotedItems(quoted.items, calcInputs, pricing);
+
   const { personalDataConsent: _, ...rest } = order;
   void _;
   const crmOrder: Omit<OrderRequest, "personalDataConsent"> = {
     ...rest,
-    items: quoted.items,
+    items: enrichedItems,
     summary: {
       total_no_vat: quoted.summary.total_no_vat,
       total_with_vat: quoted.summary.total_with_vat,

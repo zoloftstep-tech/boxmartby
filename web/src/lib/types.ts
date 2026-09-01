@@ -44,6 +44,9 @@ export type CalcItemResult = {
   total_price_no_vat: number;
   /** Resolved FEFCO blank id used for area (selfLock / fourFlap / ourDies). */
   formulaTypeId?: string;
+  /** ourDies only — id and display name from catalog. */
+  die_id?: string;
+  die_label?: string;
 };
 
 export type CalcSummary = {
