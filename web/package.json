@@ -13,7 +13,8 @@
     "test:health": "tsx scripts/test-health-checks.ts",
     "test:contract-calculate": "tsx scripts/test-contract-calculate.ts",
     "test:order-item-spec": "tsx scripts/test-order-item-spec.ts",
-    "test": "npm run test:pricing && npm run test:blank-types && npm run test:idempotency && npm run test:health && npm run test:contract-calculate && npm run test:order-item-spec"
+    "test:self-lock-notice": "tsx scripts/test-self-lock-notice.ts",
+    "test": "npm run test:pricing && npm run test:blank-types && npm run test:idempotency && npm run test:health && npm run test:contract-calculate && npm run test:order-item-spec && npm run test:self-lock-notice"
   },
   "dependencies": {
     "next": "^15.3.0",

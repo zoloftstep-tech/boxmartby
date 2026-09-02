@@ -13,6 +13,7 @@ import {
   draftDimWarnings,
   isQuantityBelowMinimum,
   isSpecialRetailDims,
+  selfLockStockNotice,
 } from "./calculator-draft";
 
 type Props = {
@@ -54,6 +55,7 @@ export function CalculatorForm({
         {items.map((item, index) => {
           const result = results?.[index];
           const dimsLocked = item.category === "ourDies";
+          const selfLockNotice = selfLockStockNotice(item, ourDies);
           return (
             <article
               key={item.id}
@@ -192,6 +194,15 @@ export function CalculatorForm({
                   className="mt-3 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2.5 text-sm leading-relaxed text-amber-950"
                 >
                   {MIN_POSITION_QUANTITY_NOTICE}
+                </p>
+              )}
+
+              {selfLockNotice && (
+                <p
+                  role="status"
+                  className="mt-3 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2.5 text-sm leading-relaxed text-amber-950"
+                >
+                  {selfLockNotice}
                 </p>
               )}
 
