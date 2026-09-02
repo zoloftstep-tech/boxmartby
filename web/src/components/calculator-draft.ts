@@ -20,7 +20,13 @@ export const FALLBACK_MATERIALS: CatalogMaterial[] = Object.entries(MATERIAL_PRI
   }),
 );
 
+/** UI default grade (independent of BoxCalc isReference / REFERENCE_MATERIAL). */
+export const DEFAULT_CALCULATOR_MATERIAL: MaterialId = "t22";
+
 export function defaultMaterialId(materials: CatalogMaterial[]): MaterialId {
+  if (materials.some((m) => m.id === DEFAULT_CALCULATOR_MATERIAL)) {
+    return DEFAULT_CALCULATOR_MATERIAL;
+  }
   const ref = materials.find((m) => m.isReference);
   return ref?.id ?? materials[0]?.id ?? REFERENCE_MATERIAL;
 }
