@@ -4,6 +4,7 @@ import { formatByn } from "@/lib/api";
 import type { BoxCategory, CalcItemResult, CatalogMaterial, MaterialId, OurDie } from "@/lib/types";
 import type { BlankTypeMeta } from "@/lib/pricing";
 import { IconPlus, IconTrash } from "./icons";
+import { MessengerLinks } from "./MessengerLinks";
 import {
   DEFAULT_SELF_LOCK_FORMULA,
   type DraftItem,
@@ -52,6 +53,10 @@ export function CalculatorForm({
   return (
     <>
       <div className="mt-10 space-y-4">
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
+          <span>Нужна помощь? Напишите нам</span>
+          <MessengerLinks />
+        </p>
         {items.map((item, index) => {
           const result = results?.[index];
           const dimsLocked = item.category === "ourDies";

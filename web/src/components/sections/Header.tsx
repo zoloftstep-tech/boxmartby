@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { IconPhone } from "../icons";
+import { MessengerLinks } from "../MessengerLinks";
 
 const NAV = [
   { href: "/#about", label: "О нас" },
@@ -71,6 +72,7 @@ export function Header() {
               <IconPhone className="h-4 w-4 text-cta" />
               +375 (29) 616-81-69
             </a>
+            <MessengerLinks />
             <Link
               href="/#calculator"
               className="focus-ring inline-flex cursor-pointer items-center whitespace-nowrap rounded-md bg-cta px-2.5 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:bg-cta-hover sm:px-3.5 sm:text-sm"
@@ -117,6 +119,10 @@ export function Header() {
             >
               +375 (29) 616-81-69
             </a>
+            <div className="mt-1 flex items-center gap-2 px-3 py-2">
+              <span className="text-sm text-muted">Написать:</span>
+              <MessengerLinks />
+            </div>
           </nav>
         </div>
       )}

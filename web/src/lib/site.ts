@@ -11,6 +11,12 @@ export const SITE_DESCRIPTION =
 
 export const SITE_PHONE = "+375296168169";
 export const SITE_EMAIL = "boxmartprod@gmail.com";
+
+export const MESSENGERS = [
+  { id: "telegram", label: "Telegram", href: "https://t.me/boxmartby" },
+  { id: "viber", label: "Viber", href: "viber://chat?number=%2B375296168169" },
+  { id: "whatsapp", label: "WhatsApp", href: "https://wa.me/375296168169" },
+] as const;
 export const SITE_ADDRESS = {
   street: "ул. Притыцкого 62",
   city: "Минск",
