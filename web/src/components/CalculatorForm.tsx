@@ -67,9 +67,16 @@ export function CalculatorForm({
               className="rounded-lg border border-line bg-surface-elevated p-4 sm:p-5"
             >
               <div className="mb-4 flex items-center justify-between gap-3">
-                <h3 className="font-display text-sm font-semibold text-ink">
-                  Позиция №{index + 1}
-                </h3>
+                <div>
+                  <h3 className="font-display text-sm font-semibold text-ink">
+                    Позиция №{index + 1}
+                  </h3>
+                  <p className="mt-0.5 text-xs font-medium text-muted">
+                    {dimsLocked
+                      ? "Размеры заданы штанцформой"
+                      : "Внутренний размер коробки"}
+                  </p>
+                </div>
                 <button
                   type="button"
                   disabled={items.length === 1}
