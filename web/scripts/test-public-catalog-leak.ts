@@ -64,6 +64,7 @@ const dirty = {
       costPerSqM: 0.82,
       coef: 2.4,
       matCost: 1,
+      next_tier_hint: { add_qty: 1, next_qty: 100, unit_price_no_vat: 2.4, coef: 2.3 },
     },
   ],
   summary: {
@@ -81,6 +82,11 @@ assert.equal("costPerSqM" in cleaned!.items[0], false);
 assert.equal("coef" in cleaned!.items[0], false);
 assert.equal("matCost" in cleaned!.items[0], false);
 assert.equal("tiers" in cleaned!.summary, false);
+assert.ok(cleaned!.items[0].next_tier_hint);
+assert.equal(cleaned!.items[0].next_tier_hint!.add_qty, 1);
+assert.equal(cleaned!.items[0].next_tier_hint!.next_qty, 100);
+assert.equal(cleaned!.items[0].next_tier_hint!.unit_price_no_vat, 2.4);
+assert.equal("coef" in (cleaned!.items[0].next_tier_hint as object), false);
 
 import { tierForQty } from "../src/lib/pricing/calculate";
 import type { QtyTier } from "../src/lib/pricing/pricing-config";

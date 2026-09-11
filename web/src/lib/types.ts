@@ -29,6 +29,12 @@ export type CalcItemInput = {
   formulaTypeId?: string;
 };
 
+export type NextTierHint = {
+  add_qty: number;
+  next_qty: number;
+  unit_price_no_vat: number;
+};
+
 export type CalcItemResult = {
   length: number;
   width: number;
@@ -47,6 +53,8 @@ export type CalcItemResult = {
   /** ourDies only — id and display name from catalog. */
   die_id?: string;
   die_label?: string;
+  /** Public-safe next-tier hint (no coefs). null/omit on last tier. */
+  next_tier_hint?: NextTierHint | null;
 };
 
 export type CalcSummary = {

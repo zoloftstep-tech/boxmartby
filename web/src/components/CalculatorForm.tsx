@@ -246,6 +246,26 @@ export function CalculatorForm({
                     {formatByn(result?.price_per_unit_no_vat)}
                   </p>
                   <p className="text-[11px] text-muted">*цена без НДС</p>
+                  {(() => {
+                    const hint = result?.next_tier_hint;
+                    if (!hint || hint.add_qty <= 0 || hint.add_qty > 50) return null;
+                    const batch = Math.round(hint.next_qty * hint.unit_price_no_vat * 100) / 100;
+                    return (
+                      <p className="mt-2 text-xs leading-snug text-ink-soft">
+                        Если добавите ещё{" "}
+                        <span className="font-semibold text-ink">
+                          {hint.add_qty.toLocaleString("ru-RU")}
+                        </span>{" "}
+                        шт (до {hint.next_qty.toLocaleString("ru-RU")}), цена будет{" "}
+                        <span className="font-semibold text-ink">
+                          {formatByn(hint.unit_price_no_vat)}
+                        </span>
+                        /шт, партия{" "}
+                        <span className="font-semibold text-ink">{formatByn(batch)}</span>{" "}
+                        без НДС
+                      </p>
+                    );
+                  })()}
                 </div>
                 <div>
                   <p className="text-xs text-muted">Итого за тираж</p>

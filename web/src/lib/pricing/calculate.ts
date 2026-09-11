@@ -1,4 +1,4 @@
-import type { CalcItemInput, CalcItemResult, CalcResponse } from "@/lib/types";
+import type { CalcItemInput, CalcItemResult, CalcResponse, NextTierHint } from "@/lib/types";
 import {
   AREA_SURCHARGE,
   type AreaSurchargeRule,
@@ -81,6 +81,33 @@ export function tierForQty(tiers: QtyTier[], qty: number): QtyTier {
   return tiers[tiers.length - 1];
 }
 
+function nextTierAfter(tiers: QtyTier[], current: QtyTier): QtyTier | null {
+  const idx = tiers.findIndex((t) => t.id === current.id);
+  if (idx < 0 || idx >= tiers.length - 1) return null;
+  return tiers[idx + 1];
+}
+
+function buildNextTierHint(
+  tiers: QtyTier[],
+  current: QtyTier,
+  qty: number,
+  areaPrice: number,
+  cardCost: number,
+  surcharge: number,
+): NextTierHint | null {
+  const next = nextTierAfter(tiers, current);
+  if (!next) return null;
+  const nextQty = Number(next.min);
+  if (!Number.isFinite(nextQty) || nextQty <= 0) return null;
+  const addQty = nextQty - qty;
+  if (addQty <= 0) return null;
+  return {
+    add_qty: addQty,
+    next_qty: nextQty,
+    unit_price_no_vat: roundPrice(areaPrice * cardCost * (Number(next.coef) + surcharge)),
+  };
+}
+
 export function areaSurchargeFor(area: number, rules: AreaSurchargeRule[] = AREA_SURCHARGE): number {
   for (const rule of rules) {
     if (!rule.active) continue;
@@ -156,7 +183,8 @@ export function calculateItem(
   const rawArea = blankArea(category, A, B, H, formulaTypeId);
   const area = rawArea;
   const tiers = pricing.tiersOpt[tierCategoryId(category)];
-  const baseCoef = tierForQty(tiers, item.quantity).coef;
+  const currentTier = tierForQty(tiers, item.quantity);
+  const baseCoef = currentTier.coef;
   const surcharge = areaSurchargeFor(area, pricing.areaSurcharge);
   const finalCoef = baseCoef + surcharge;
 
@@ -165,6 +193,14 @@ export function calculateItem(
   const unitNet = roundPrice(areaPrice * cardCost * finalCoef);
   const totalNet = roundPrice(unitNet * item.quantity);
   const volume = (A * B * H) / 1_000_000;
+  const next_tier_hint = buildNextTierHint(
+    tiers,
+    currentTier,
+    item.quantity,
+    areaPrice,
+    cardCost,
+    surcharge,
+  );
 
   return {
     length: A,
@@ -180,6 +216,7 @@ export function calculateItem(
     price_per_unit_no_vat: unitNet,
     total_price_no_vat: totalNet,
     formulaTypeId: resolvedFormulaId,
+    next_tier_hint,
     ...(category === "ourDies" && die
       ? { die_id: die.id, die_label: die.name }
       : {}),

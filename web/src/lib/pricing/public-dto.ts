@@ -52,6 +52,21 @@ function pickPublicItem(raw: Record<string, unknown>): CalcItemResult {
   if (raw.formulaTypeId != null) item.formulaTypeId = String(raw.formulaTypeId);
   if (raw.die_id != null) item.die_id = String(raw.die_id);
   if (raw.die_label != null) item.die_label = String(raw.die_label);
+  const hintRaw = raw.next_tier_hint;
+  if (hintRaw === null) {
+    item.next_tier_hint = null;
+  } else if (isPlainObject(hintRaw)) {
+    const addQty = Number(hintRaw.add_qty);
+    const nextQty = Number(hintRaw.next_qty);
+    const unit = Number(hintRaw.unit_price_no_vat);
+    if (Number.isFinite(addQty) && addQty > 0 && Number.isFinite(nextQty) && Number.isFinite(unit)) {
+      item.next_tier_hint = {
+        add_qty: addQty,
+        next_qty: nextQty,
+        unit_price_no_vat: unit,
+      };
+    }
+  }
   return item;
 }
 
