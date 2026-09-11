@@ -2,7 +2,7 @@ import {
   defaultFormulaForCategory,
   dimWarningsForItem,
   blankTypesForCategory,
-  MATERIAL_PRICES,
+  FALLBACK_MATERIALS,
   MIN_DIMS,
   REFERENCE_MATERIAL,
   type BlankTypeMeta,
@@ -12,13 +12,8 @@ import type { BoxCategory, CatalogMaterial, MaterialId, OurDie } from "@/lib/typ
 export const DEFAULT_SELF_LOCK_FORMULA = defaultFormulaForCategory("selfLock");
 export const FALLBACK_SELF_LOCK_TYPES = blankTypesForCategory(undefined, "selfLock");
 
-export const FALLBACK_MATERIALS: CatalogMaterial[] = Object.entries(MATERIAL_PRICES).map(
-  ([id, info]) => ({
-    id,
-    label: info.label,
-    isReference: info.isReference,
-  }),
-);
+/** Re-export catalog-only fallback (no costPerSqM). */
+export { FALLBACK_MATERIALS };
 
 /** UI default grade (independent of BoxCalc isReference / REFERENCE_MATERIAL). */
 export const DEFAULT_CALCULATOR_MATERIAL: MaterialId = "t22";

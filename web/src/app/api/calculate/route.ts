@@ -6,6 +6,7 @@ import {
   proxyToBoxCalc,
 } from "@/lib/pricing/remote-calculate";
 import { getLivePricingConfig } from "@/lib/pricing/remote-defaults";
+import { toPublicCalcResponse } from "@/lib/pricing/public-dto";
 import type { CalcItemInput, CalcRequest } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
@@ -48,8 +49,9 @@ export async function POST(req: NextRequest) {
   if (calcUrl && key) {
     try {
       const remote = await proxyToBoxCalc(items, calcUrl, key);
-      if (remote?.items && remote.summary) {
-        const res = NextResponse.json(remote);
+      const publicRemote = remote ? toPublicCalcResponse(remote) : null;
+      if (publicRemote) {
+        const res = NextResponse.json(publicRemote);
         res.headers.set("X-Pricing-Source", "remote");
         return res;
       }
@@ -85,7 +87,11 @@ export async function POST(req: NextRequest) {
       "[pricing] source=local (CALCULATOR_DEFAULTS_URL/API_KEY or calculate URL not set)",
     );
   }
-  const res = NextResponse.json(calculateItems(items, pricing));
+  const publicLocal = toPublicCalcResponse(calculateItems(items, pricing));
+  if (!publicLocal) {
+    return NextResponse.json({ error: "Ошибка расчёта" }, { status: 500 });
+  }
+  const res = NextResponse.json(publicLocal);
   res.headers.set("X-Pricing-Source", pricingSource);
   return res;
 }

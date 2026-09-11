@@ -1,7 +1,7 @@
 /**
- * Client-safe dim warnings (no FEFCO formulas).
+ * Client-safe dim warnings (no FEFCO formulas, no pricing costs).
  */
-import type { BoxCategory } from "./pricing-config";
+import type { BoxCategory } from "./public";
 
 export function dimWarningsForItem(
   item: Pick<{ length: number; width: number; height: number; category: BoxCategory }, "length" | "width" | "height" | "category">,

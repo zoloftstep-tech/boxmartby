@@ -1,7 +1,6 @@
 import type { CalcItemInput, CalcItemResult, CalcResponse } from "@/lib/types";
 import {
   AREA_SURCHARGE,
-  CATEGORY_LABELS,
   type AreaSurchargeRule,
   type BoxCategory,
   type MaterialId,
@@ -9,6 +8,7 @@ import {
   type PricingTierCategory,
   type QtyTier,
 } from "./pricing-config";
+import { CATEGORY_LABELS } from "./public";
 import { blankAreaForFormula, defaultFormulaForCategory } from "./fefco-formulas";
 import { isBuiltinFormulaForCategory, isKnownBlankTypeId } from "./fefco-catalog";
 import { localPricingConfig, type LivePricingConfig } from "./remote-defaults";
@@ -71,9 +71,14 @@ export function resolveItemDims(
 }
 
 export function tierForQty(tiers: QtyTier[], qty: number): QtyTier {
+  if (!tiers.length) {
+    throw new Error("tierForQty: empty tiers");
+  }
   const match = tiers.find((t) => qty >= t.min && qty <= t.max);
   if (match) return match;
-  return tiers[0];
+  // qty below first band → first (most expensive); above last open band → last
+  if (qty < tiers[0].min) return tiers[0];
+  return tiers[tiers.length - 1];
 }
 
 export function areaSurchargeFor(area: number, rules: AreaSurchargeRule[] = AREA_SURCHARGE): number {

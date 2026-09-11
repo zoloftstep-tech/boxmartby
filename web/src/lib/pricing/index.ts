@@ -1,21 +1,17 @@
 /**
- * Client-safe pricing surface — no FEFCO formula bodies.
- * Server routes must import calculate.ts / fefco-formulas.ts directly.
+ * Client-safe pricing surface — catalog meta + dim helpers only.
+ * Commercial costs/tiers live in pricing-config.ts (server-only).
+ * Server routes import calculate.ts / remote-defaults.ts / pricing-config.ts directly.
  */
 export {
-  AREA_SURCHARGE,
   CATEGORY_LABELS,
-  MATERIAL_PRICES,
+  FALLBACK_MATERIALS,
   MIN_DIMS,
-  QTY_TIERS_OPT,
   REFERENCE_MATERIAL,
-  VAT_PERCENT,
   type BoxCategory,
   type MaterialId,
-  type MaterialInfo,
-  type OurDie,
   type PricingTierCategory,
-} from "./pricing-config";
+} from "./public";
 
 export {
   FEFCO_TYPE_CATALOG,

@@ -1,16 +1,21 @@
 /**
  * =============================================================================
- * OWNER EDIT — тарифы и коэффициенты калькулятора
+ * SERVER MODULE — тарифы и коэффициенты (local fallback)
  * =============================================================================
- * Источник: boxcalculator (режим ОПТ). Правите здесь цены, градации тиража
- * и надбавку по площади. Формулы геометрии заготовки — в calculate.ts.
+ * Do not import from "use client" / calculator-draft / @/lib/pricing barrel.
+ * Live prod values come from BoxCalc org defaults on the server.
  * =============================================================================
  */
 
-export type PricingTierCategory = "fourFlap" | "selfLock";
-export type BoxCategory = PricingTierCategory | "ourDies";
-/** Cardboard grade id from BoxCalc cardTypes (e.g. t22, e). */
-export type MaterialId = string;
+import {
+  type BoxCategory,
+  type MaterialId,
+  type PricingTierCategory,
+  REFERENCE_MATERIAL,
+} from "./public";
+
+export type { BoxCategory, MaterialId, PricingTierCategory };
+export { REFERENCE_MATERIAL };
 
 export type MaterialInfo = {
   label: string;
@@ -47,6 +52,7 @@ export type AreaSurchargeRule = {
 
 /* -----------------------------------------------------------------------------
  * 1. MATERIAL_PRICES — стоимость марки картона, BYN за м² (без НДС)
+ *    Local server fallback only — not published as Site client price book.
  * --------------------------------------------------------------------------- */
 export const MATERIAL_PRICES: Record<string, MaterialInfo> = {
   t22: { label: "Т-22", costPerSqM: 0.82 },
@@ -54,13 +60,9 @@ export const MATERIAL_PRICES: Record<string, MaterialInfo> = {
   t24: { label: "Т-24", costPerSqM: 0.95 },
 };
 
-export const REFERENCE_MATERIAL: MaterialId = "t23";
-
 /* -----------------------------------------------------------------------------
  * 2. QTY_TIERS_OPT — коэффициенты по градации тиража (только ОПТ)
- *    fourFlap = четырёхклапанная (FEFCO 0201)
- *    selfLock = самосборная (FEFCO 0409)
- *    qty < min первой ступени → берётся первая ступень (t50)
+ *    Length is data-driven (5 or 7+); do not hardcode step count in logic.
  * --------------------------------------------------------------------------- */
 export const QTY_TIERS_OPT: Record<PricingTierCategory, QtyTier[]> = {
   fourFlap: [
@@ -81,10 +83,6 @@ export const QTY_TIERS_OPT: Record<PricingTierCategory, QtyTier[]> = {
 
 /* -----------------------------------------------------------------------------
  * 3. AREA_SURCHARGE — надбавка к коэффициенту по площади заготовки (м²)
- *    По умолчанию все правила выключены (как в приложении).
- *    Чтобы включить: active: true и задайте from/to/add.
- *    Чтобы убрать вовсе: оставьте active: false или обнулите add.
- *    Срабатывает первое подходящее активное правило сверху вниз.
  * --------------------------------------------------------------------------- */
 export const AREA_SURCHARGE: AreaSurchargeRule[] = [
   { active: false, from: 0, to: 0.6, add: 0.1 / 0.87 },
@@ -94,19 +92,3 @@ export const AREA_SURCHARGE: AreaSurchargeRule[] = [
 
 /** НДС, % */
 export const VAT_PERCENT = 20;
-
-/**
- * Минимальные габариты (мм), как в boxcalculator:
- * A ≥ minL, B ≥ minW, B+H ≥ minWH
- */
-export const MIN_DIMS = {
-  minL: 240,
-  minW: 80,
-  minWH: 280,
-};
-
-export const CATEGORY_LABELS: Record<BoxCategory, string> = {
-  fourFlap: "Четырёхклапанная",
-  selfLock: "Самосборная",
-  ourDies: "Наши штанцформы",
-};

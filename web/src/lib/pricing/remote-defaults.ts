@@ -1,9 +1,7 @@
 import {
   AREA_SURCHARGE,
   MATERIAL_PRICES,
-  MIN_DIMS,
   QTY_TIERS_OPT,
-  REFERENCE_MATERIAL,
   VAT_PERCENT,
   type AreaSurchargeRule,
   type MaterialId,
@@ -12,6 +10,7 @@ import {
   type PricingTierCategory,
   type QtyTier,
 } from "./pricing-config";
+import { MIN_DIMS, REFERENCE_MATERIAL } from "./public";
 import {
   FEFCO_TYPE_CATALOG,
   type BlankTypeMeta,
