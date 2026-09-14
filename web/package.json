@@ -15,7 +15,8 @@
     "test:order-item-spec": "tsx scripts/test-order-item-spec.ts",
     "test:self-lock-notice": "tsx scripts/test-self-lock-notice.ts",
     "test:public-catalog-leak": "tsx scripts/test-public-catalog-leak.ts",
-    "test": "npm run test:pricing && npm run test:blank-types && npm run test:idempotency && npm run test:health && npm run test:contract-calculate && npm run test:order-item-spec && npm run test:self-lock-notice && npm run test:public-catalog-leak"
+    "test:enrich-quoted-items": "tsx scripts/test-enrich-quoted-items.ts",
+    "test": "npm run test:pricing && npm run test:blank-types && npm run test:idempotency && npm run test:health && npm run test:contract-calculate && npm run test:order-item-spec && npm run test:self-lock-notice && npm run test:public-catalog-leak && npm run test:enrich-quoted-items"
   },
   "dependencies": {
     "next": "^15.3.0",
