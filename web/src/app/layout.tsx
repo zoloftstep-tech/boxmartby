@@ -64,6 +64,9 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  verification: {
+    yandex: "075535478dae4e26",
+  },
   icons: {
     icon: [{ url: "/logo-mark.png", type: "image/png" }],
     apple: [{ url: "/logo-mark.png", type: "image/png" }],
