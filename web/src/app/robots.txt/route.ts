@@ -1,18 +1,14 @@
 import { SITE_URL } from "@/lib/site";
 
 /**
- * robots.txt with Content Signals (contentsignals.org).
- * MetadataRoute.Robots cannot emit Content-Signal, so we serve plain text.
- *
- * search/ai-input = yes → visibility in AI search / answers
- * ai-train = no → no preference for model training use
+ * robots.txt as plain text (Host is Yandex-oriented; Google ignores unknown lines).
+ * Content-Signal omitted: Yandex Webmaster flags it as an unknown directive.
  */
 export function GET() {
   const body = [
     "User-agent: *",
     "Allow: /",
     "Disallow: /api/",
-    "Content-Signal: search=yes, ai-input=yes, ai-train=no",
     "",
     `Sitemap: ${SITE_URL}/sitemap.xml`,
     `Host: ${SITE_URL}`,
