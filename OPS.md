@@ -54,6 +54,8 @@ Root Directory на Vercel у Site, BoxCalc и CRM: **`web`**.
    - `local-fallback` — defaults/remote были, но calculate proxy упал → **warn в логах Vercel**;
    - `local` — нет `CALCULATOR_DEFAULTS_URL` / API key.
 
+**Тарифы (с 2026-09):** 7 ступеней ОПТ (`t50`…`t2000`), розница удалена. Seed/коэфы — bootstrap; SoT = org после Publish. Подробности: BoxCalc `docs/TZ-PRICING-TIERS-2026.md`. Ответ `POST /api/calculate` может включать `next_tier_hint` (цены без coef).
+
 ### Golden-кейс (регрессия)
 
 `220 × 70 × 100 мм`, qty `50`, `fourFlap`, `t22`, defaults seed → **0,24** BYN/шт (округление до 2 знаков).
