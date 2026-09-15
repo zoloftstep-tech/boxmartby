@@ -194,7 +194,7 @@ export function CalculatorForm({
                     value={item.quantity}
                     onChange={(e) => onUpdateNumeric(item.id, "quantity", e.target.value)}
                     className="focus-ring mt-1.5 w-full rounded-md border border-line bg-white px-3 py-2.5 text-sm text-ink"
-                    placeholder="100"
+                    placeholder="1000"
                     autoComplete="off"
                   />
                 </label>

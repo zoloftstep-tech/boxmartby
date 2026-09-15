@@ -33,7 +33,7 @@
 | Файл | Роль |
 |------|------|
 | `web/src/components/Calculator.tsx` | Оркестратор state / recalc / layout |
-| `web/src/components/calculator-draft.ts` | DraftItem, toPayload, qty/dim guards; FALLBACK_MATERIALS без costs |
+| `web/src/components/calculator-draft.ts` | DraftItem, toPayload, qty/dim guards; FALLBACK_MATERIALS без costs; **default qty = 1000** |
 | `web/src/components/CalculatorForm.tsx` | Ряды позиций |
 | `web/src/components/CalculatorResults.tsx` | Итого + CTA (+ next-tier hint при наличии) |
 | `web/src/components/OrderModal.tsx` | Заявка + idempotency |
@@ -55,6 +55,7 @@ Suites: pricing golden, blank-types, idempotency, health, contract-calculate (li
 3. Legacy TG/Optopak на Site **не возвращать**.
 4. `CRON_SECRET` в Vercel; в `.env.example` секреты не коммитить.
 5. FAQ SoT = `site.ts` (не дублировать длинные ответы в лендингах без нужды).
+6. Дефолтный тираж в калькуляторе сайта = **1000 шт** (показывать оптовую ступень; клиент правит вниз и видит разницу).
 
 ## Рекомендации — дальше
 

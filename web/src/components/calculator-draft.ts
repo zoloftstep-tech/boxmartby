@@ -46,7 +46,7 @@ export function emptyItem(
     length: "",
     width: "",
     height: "",
-    quantity: "100",
+    quantity: "1000",
     category: "fourFlap",
     material,
     dieId: "",
