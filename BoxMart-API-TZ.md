@@ -2,8 +2,10 @@
 ## API для калькулятора стоимости коробок (Backend)
 ### ООО «БОКСМАРТ» — сайт-визитка
 
-**Версия:** 1.0
-**Дата:** 28 июля 2026
+**Версия:** 1.1 (актуализация 2026-09-15) · исходный бриф: 1.0 / 28 июля 2026
+
+> **Статус:** документ ниже — исходный бриф. **DoD и контракт:** [`HANDOFF.md`](HANDOFF.md), [`OPS.md`](OPS.md), код `web/src/app/api/*`.  
+> Факт: Next.js Route Handlers на Vercel. `POST /api/calculate` → BoxCalc (+ server fallback), public DTO без costs/coefs. `GET /api/live-catalog` без costs/tiers. `POST /api/submit-order` → server re-quote → `enrichQuotedItems` → CRM ingest + email (TG заказов на Site нет).
 
 ---
 
@@ -74,7 +76,9 @@ Backend-сервис принимает от фронтенда сайта ис�
 ### 3.2. `POST /api/submit-order`
 Отправка оформленной заявки (вызывается из модального окна "Оформить заявку").
 
-**Request body:**
+> **Актуально (2026-09):** клиентские цены не доверяются; сервер делает remote re-quote; в CRM уходят server items + непустые `category_label` / `material_label`; уведомление менеджерам о заказе — **CRM Telegram**, на Site остаётся email после ingest. Детали — HANDOFF/OPS.
+
+**Request body (исходный бриф):**
 ```json
 {
   "name": "Иван Иванов",
@@ -91,7 +95,7 @@ Backend-сервис принимает от фронтенда сайта ис�
 { "status": "ok", "order_id": "BM-20260728-0001" }
 ```
 
-**Логика обработки:**
+**Логика обработки (исторический бриф Variant A):**
 1. Валидация обязательных полей (`name`, `phone`).
 2. Формирование текста уведомления.
 3. Параллельная отправка: (a) Email через Gmail SMTP/OAuth2, (b) сообщение в приватную Telegram-группу через Bot API.

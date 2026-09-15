@@ -2,13 +2,14 @@
 
 B2B landing page for ООО «БОКСМАРТ» — corrugated packaging manufacturer (Minsk).
 
-**Platform ops (Site + BoxCalc + CRM):** see [`../OPS.md`](../OPS.md) before changing pricing, orders, Telegram, or env.
+**Ops:** [`../OPS.md`](../OPS.md) · **Agent handoff:** [`../HANDOFF.md`](../HANDOFF.md) · **Deploy:** [`../DEPLOY.md`](../DEPLOY.md).
 
 ## Stack
 
-- Next.js (App Router)
+- Next.js 15 (App Router) + React 19
 - Tailwind CSS v4
 - TypeScript
+- Vercel (Root Directory `web`)
 
 ## Develop
 
@@ -20,21 +21,30 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## Calculator API
+## Calculator & orders
 
-UI calls `POST /api/calculate` and `POST /api/submit-order`.
+| Route | Role |
+|-------|------|
+| `POST /api/calculate` | BFF → BoxCalc (or server local-fallback). Public JSON: prices/geometry **without** `costPerSqM` / `coef` / `matCost`. Header `X-Pricing-Source`. |
+| `GET /api/live-catalog` | Materials `{id,label,isReference}`, ourDies, blankTypes — **no** costs/tiers. |
+| `POST /api/submit-order` | Origin check → **server re-quote** (remote only) → enrich labels → CRM ingest (`CRM_INGEST_URL` + `INGEST_SITE_SECRET` + `Idempotency-Key`) → email. TG order cards: **CRM**, not Site. |
+| `GET /api/health` | Probe defaults / calculate / ingest. |
 
-Live tariffs: `GET` BoxCalc `/api/defaults` via `CALCULATOR_DEFAULTS_URL` + `CALCULATOR_DEFAULTS_API_KEY`
-(same value as BoxCalc `DEFAULTS_API_KEY`). In-memory cache ~60s (`cache: "no-store"` on fetch);
-on missing env or fetch error — fallback to `src/lib/pricing/pricing-config.ts`.
-Response header `X-Pricing-Source: remote|local` shows which source was used.
+Client UI must not import `pricing-config.ts` (costs/tiers). Use `@/lib/pricing` barrel / `public.ts` only.
 
-Order notifications (Variant A): Telegram Bot API + Gmail SMTP via `src/lib/notifications.ts`.
-Copy `.env.example` → `.env.local` and fill secrets before testing submit.
+Copy `web/.env.example` → `web/.env.local` (names only in example; never commit secrets).
 
-## Docs placeholders
+## Content SoT
 
-Put real PDFs at:
+- FAQ, phone, messengers: `src/lib/site.ts`
+- SEO landings: `src/lib/landings.ts`
 
-- `public/docs/requisites.docx`
-- `public/docs/contract-template.docx`
+## Tests
+
+```bash
+cd web && npm test && npm run lint
+```
+
+## Docs / downloads
+
+Footer expects contract/requisites under `public/docs/` (paths may change; check Footer component).

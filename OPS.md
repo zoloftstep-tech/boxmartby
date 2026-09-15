@@ -2,7 +2,7 @@
 
 **Назначение:** единый контекст для людей и AI-агентов. Читать перед правками цен, заказов, Telegram, env, деплоя.  
 **Копии:** одинаковый файл лежит в **обоих** репозиториях (`boxmartby` и `boxcalculator`). При правке — обновить обе копии в одном PR/сессии.  
-**Дата актуализации:** 2026-08-25  
+**Дата актуализации:** 2026-09-15  
 **Не коммитить:** `.env.local`, секреты, `.vercel/` project tokens.
 
 ---
@@ -11,7 +11,7 @@
 
 | Система | GitHub | Vercel (типично) | Роль |
 |---------|--------|------------------|------|
-| **Boxmart Site** | `zoloftstep-tech/boxmartby` | `boxmartby` / `boxmartby.vercel.app` | Витрина, калькулятор на сайте, заявки, legacy Telegram/Optopak |
+| **Boxmart Site** | `zoloftstep-tech/boxmartby` | `boxmartby` / `boxmartby.vercel.app` | Витрина, публичный калькулятор, заявки → CRM (legacy Optopak/TG webhooks **удалены**) |
 | **BoxCalc** | `zoloftstep-tech/boxcalculator` | `boxcalculator` | Калькулятор менеджеров (SPA), org-тарифы, `POST /api/calculate`, FEFCO 0201 |
 | **Boxmart CRM** | `zoloftstep-tech/boxmart-crm` | `boxmart-crm.vercel.app` | SoT статусов/заказов, ingest, Optopak — детальный OPS в репо CRM: [`OPS.md`](https://github.com/zoloftstep-tech/boxmart-crm/blob/main/OPS.md) |
 
@@ -32,10 +32,10 @@ Root Directory на Vercel у Site, BoxCalc и CRM: **`web`**.
 | **Каталог форматов листа (склад)** | BoxCalc `org_settings.sheetFormats` | `GET /api/defaults` → `sheetFormats[]` (`cardTypeId`, `active`); cutover: wipe → ввод → Save → Publish |
 | **Раскладка заготовки на лист** | BoxCalc `POST /api/layout` (`lib/calc/layout.ts`) | `blanksPerSheet`; без авто-выбора формата; CRM `fetchSheetLayout` |
 | **Формула FEFCO 0201 (геометрия)** | BoxCalc `web/src/lib/calc/fefco-0201.ts` | В SPA попадает через `npm run sync:fefco` → `public/calc/fefco-0201.js` |
-| **Локальный fallback цен на сайте** | Site `web/src/lib/pricing/*` | Используется если BoxCalc недоступен или нет env |
+| **Локальный fallback цен на сайте** | Site `web/src/lib/pricing/pricing-config.ts` (**server only**) | Не импортировать в `"use client"`; UI каталог — `public.ts` / live-catalog без costs |
 | **Статусы заказов** | **CRM** | Не полагаться на Telegram inline-кнопки сайта как на SoT |
-| **Заявки с сайта** | `POST` Site `/api/submit-order` → CRM ingest | Email **после** CRM ingest; сбой email ≠ откат заявки |
-| **Парсер «Оптопак»** | Зависит от **webhook URL** | Может смотреть на Site *или* CRM — проверить `getWebhookInfo` перед правками |
+| **Заявки с сайта** | `POST` Site `/api/submit-order` → re-quote → enrich labels → CRM ingest | Email **после** CRM ingest; сбой email ≠ откат заявки; client prices ignored |
+| **Парсер «Оптопак»** | **CRM** webhook | Site legacy webhooks удалены (Phase H) |
 
 ---
 
@@ -132,9 +132,16 @@ unitNet   = round2(matCost × (tierCoef + areaSurcharge) × (1 − discount%))
 
 ### Сайт → CRM
 
-- `web/src/app/api/submit-order/route.ts` шлёт ingest в CRM (`CRM_INGEST_URL` + `INGEST_SITE_SECRET`) + email; TG заказных карточек сайт не шлёт.
+- `web/src/app/api/submit-order/route.ts`: Origin check → server **re-quote** via remote BoxCalc (503 if down; **не** submit с client prices) → `enrichQuotedItems` (непустые `category_label` / `material_label` для счёта CRM) → ingest (`CRM_INGEST_URL` + `INGEST_SITE_SECRET` + `Idempotency-Key`) → email.
+- TG заказных карточек сайт **не** шлёт.
 - Синхронный HTTP: при падении CRM заявка может не попасть в CRM (email отдельно).
 - Страница «спасибо»: `/spasibo`.
+
+### Публичные API — запрет утечки коммерции
+
+- `GET /api/live-catalog` и public DTO `POST /api/calculate`: **нет** `costPerSqM`, `coef`, `tiers`, `areaSurcharge`, `matCost` в JSON для браузера.
+- Regression: `npm run test:public-catalog-leak` в `web/`.
+- Клиент: `@/lib/pricing` barrel / `public.ts` — без `MATERIAL_PRICES` / `QTY_TIERS_OPT`.
 
 ### Telegram after Phase H (2026-08-25)
 
@@ -278,6 +285,11 @@ curl -sS -H "Authorization: Bearer $CRON_SECRET" \
 | 2026-08-25 | Removed Site legacy Optopak + status webhook | Phase H; gate `parser_on_crm` re-checked; notify deleteWebhook after deploy |
 | 2026-08-25 | Site Phase I.2 — split `Calculator.tsx` | draft helpers + Form/Results/OrderModal; calculate/ingest contracts unchanged |
 | 2026-08-25 | CRM Phase I.1 — split `actions/orders.ts` | barrel + read/write/status/production/shared; BoxCalc SPA split deferred |
+| 2026-08-31 | Site architecture audit | `ARCHITECTURE-AUDIT.md`; P1 price spoof / costs-in-client |
+| 2026-09 | Site server re-quote + no hardcoded CRM URL | submit ignores client money; 503 if BoxCalc/CRM env down |
+| 2026-09 | Site public pricing surface | `pricing/public.ts` + DTO sanitizers; leak regression test |
+| 2026-09 | Site enrich labels for CRM | `enrichQuotedItems` guarantees category/material labels |
+| 2026-09-15 | FAQ copy | ЕРИП; Европочта / Белпочта / АвтолайтЭкспресс |
 
 ---
 

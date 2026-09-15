@@ -32,15 +32,17 @@
 
 **Не нужны на Site (Phase H, удалены routes):** `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_PARSER_*`, `PERPLEXITY_API_KEY` — парсер/Optopak и status webhook живут в **CRM**. Можно удалить эти env из Vercel Site после деплоя H.
 
-Сайт проксирует `POST /api/calculate` на BoxCalc (единая формула). Каталог штанцформ — `GET /api/live-catalog` → org `ourDies`. Без env — fallback на локальный `pricing-config.ts` (`ourDies: []`).
+Сайт проксирует `POST /api/calculate` на BoxCalc (единая формула). Каталог — `GET /api/live-catalog` (без costs/tiers). Без env — server fallback `pricing-config.ts`. Submit: remote re-quote → CRM (`CRM_INGEST_URL` обязателен).
 
 Проверка после деплоя:
 
 ```bash
+curl -s "https://YOUR-SITE/api/health" | jq .
 curl -s -H "Authorization: Bearer $KEY" "$CALCULATOR_DEFAULTS_URL" | jq '.ourDies | length'
-curl -s -D- -X POST https://YOUR-SITE/api/live-catalog -o /dev/null | grep -i X-Pricing-Source
+curl -s -D- "https://YOUR-SITE/api/live-catalog" -o /tmp/live-catalog.json | grep -i X-Pricing-Source
+# JSON live-catalog / calculate не должен содержать costPerSqM, coef, tiers, areaSurcharge
 curl -sS -H "Authorization: Bearer $CRON_SECRET" "https://YOUR-SITE/api/cron/pricing-contract" | jq .
-# Ожидание: { "ok": true }; при fail — Telegram [pricing-contract] FAIL
+# Ожидание health.ok / cron: { "ok": true }; при fail cron — Telegram [pricing-contract] FAIL
 ```
 
 Локальный `.env.local` на Vercel не попадает.
